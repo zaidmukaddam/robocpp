@@ -1,0 +1,23 @@
+[package]
+name = "rbcpp_cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "rbcpp"
+path = "src/main.rs"
+
+[dependencies]
+iec_c = { path = "../iec_c" }
+iec_diagnostics = { path = "../iec_diagnostics" }
+iec_ir = { path = "../iec_ir" }
+iec_plcopen = { path = "../iec_plcopen" }
+iec_profile = { path = "../iec_profile" }
+iec_runtime = { path = "../iec_runtime" }
+iec_semantics = { path = "../iec_semantics" }
+iec_syntax = { path = "../iec_syntax" }
+
+[lints]
+workspace = true

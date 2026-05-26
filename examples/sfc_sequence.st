@@ -1,0 +1,13 @@
+PROGRAM Sequence
+VAR
+    Ready : BOOL := TRUE;
+    Done : BOOL := FALSE;
+END_VAR
+
+INITIAL_STEP Start;
+STEP Run;
+TRANSITION Go := Ready;
+ACTION Run:
+    Done := TRUE;
+END_ACTION;
+END_PROGRAM

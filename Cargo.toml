@@ -1,0 +1,23 @@
+[workspace]
+members = [
+    "crates/iec_diagnostics",
+    "crates/iec_profile",
+    "crates/iec_ir",
+    "crates/iec_stdlib",
+    "crates/iec_syntax",
+    "crates/iec_semantics",
+    "crates/iec_runtime",
+    "crates/iec_c",
+    "crates/iec_plcopen",
+    "crates/rbcpp_cli",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://example.invalid/robocpp"
+rust-version = "1.76"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

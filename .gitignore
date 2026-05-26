@@ -1,0 +1,6 @@
+/target/
+/build/
+/docs/
+*.tmp
+*.log
+ourdev_569653*.pdf
