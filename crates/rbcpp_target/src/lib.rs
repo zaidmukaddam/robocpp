@@ -160,9 +160,13 @@ impl RetainStore {
 
     pub fn load(&self, name: &str) -> io::Result<Option<Value>> {
         let path = self.path_for(name);
-        if !path.exists() {
+        let path = if path.exists() {
+            path
+        } else if let Some(legacy_path) = self.legacy_path_for(name).filter(|path| path.exists()) {
+            legacy_path
+        } else {
             return Ok(None);
-        }
+        };
         let raw = fs::read_to_string(path)?;
         Ok(Some(decode_typed_value(raw.trim_end_matches(['\n', '\r']))))
     }
@@ -174,8 +178,17 @@ impl RetainStore {
     }
 
     fn path_for(&self, name: &str) -> PathBuf {
-        self.root
-            .join(format!("{}.retain", safe_file_component(name)))
+        self.root.join(format!(
+            "{}.retain",
+            safe_file_component(&canonical_key(name))
+        ))
+    }
+
+    fn legacy_path_for(&self, name: &str) -> Option<PathBuf> {
+        let legacy = self
+            .root
+            .join(format!("{}.retain", safe_file_component(name)));
+        (legacy != self.path_for(name)).then_some(legacy)
     }
 }
 
@@ -2150,6 +2163,7 @@ mod tests {
             store.load("Label").unwrap(),
             Some(Value::String("robot".to_string()))
         );
+        assert_eq!(store.load("COUNTER.CV").unwrap(), Some(Value::Int(17)));
         assert_eq!(store.load("Missing").unwrap(), None);
 
         let _ = fs::remove_dir_all(root);
