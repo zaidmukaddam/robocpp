@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::too_many_arguments)]
+
 use iec_diagnostics::{Diagnostic, DiagnosticCode};
 use iec_ir::*;
 use iec_profile::EditionProfile;
@@ -1184,7 +1186,7 @@ fn expr_or_refs_with_stack(
         .collect::<Vec<_>>();
     let first = exprs
         .is_empty()
-        .then(|| Expr::Literal(Literal::Bool(true)))
+        .then_some(Expr::Literal(Literal::Bool(true)))
         .or_else(|| {
             let first = exprs.remove(0);
             Some(exprs.into_iter().fold(first, |left, right| Expr::Binary {

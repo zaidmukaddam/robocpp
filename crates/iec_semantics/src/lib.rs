@@ -10,19 +10,10 @@ use iec_stdlib::{
     is_standard_void_function, standard_function_input_index, standard_symbols, StandardSymbolKind,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CheckOptions {
     pub profile: EditionProfile,
     pub implementation: ImplementationParameters,
-}
-
-impl Default for CheckOptions {
-    fn default() -> Self {
-        Self {
-            profile: EditionProfile::default(),
-            implementation: ImplementationParameters::default(),
-        }
-    }
 }
 
 pub fn check_project(project: &Project, options: &CheckOptions) -> Vec<Diagnostic> {
@@ -333,20 +324,19 @@ impl Checker {
                         ));
                         variables.insert(var.name.canonical.clone(), var.type_spec.clone());
                     }
-                } else if block.kind != VarBlockKind::Access {
-                    if variables
+                } else if block.kind != VarBlockKind::Access
+                    && variables
                         .insert(var.name.canonical.clone(), var.type_spec.clone())
                         .is_some()
-                    {
-                        self.diagnostics.push(Diagnostic::error(
-                            DiagnosticCode::Semantic,
-                            format!(
-                                "duplicate variable '{}' in POU '{}'",
-                                var.name.original, pou.name.original
-                            ),
-                            None,
-                        ));
-                    }
+                {
+                    self.diagnostics.push(Diagnostic::error(
+                        DiagnosticCode::Semantic,
+                        format!(
+                            "duplicate variable '{}' in POU '{}'",
+                            var.name.original, pou.name.original
+                        ),
+                        None,
+                    ));
                 }
                 self.check_type_spec(&var.type_spec, &known_types);
                 if let DataTypeSpec::Named(type_name) = &var.type_spec {
@@ -1930,7 +1920,7 @@ impl Checker {
         let mut unknown_index = usize::MAX.saturating_sub(args.len());
 
         for arg in args {
-            if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+            if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
                 continue;
             }
             let Some(expr) = arg.expr.as_ref() else {
@@ -2699,7 +2689,7 @@ impl Checker {
         let Some(value) = args
             .iter()
             .filter(|arg| !arg.output)
-            .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+            .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
             .filter_map(|arg| arg.expr.as_ref())
             .next()
             .and_then(|expr| const_conversion_i128(expr, variables, project, self))
@@ -2731,7 +2721,7 @@ impl Checker {
         let Some(value) = args
             .iter()
             .filter(|arg| !arg.output)
-            .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+            .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
             .filter_map(|arg| arg.expr.as_ref())
             .next()
             .and_then(|expr| const_conversion_i128(expr, variables, project, self))
@@ -3314,11 +3304,11 @@ impl Checker {
         let mut positional_index = 0_usize;
 
         for arg in args {
-            if arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+            if arg.name.as_ref().is_some_and(is_implicit_en) {
                 continue;
             }
             if arg.output {
-                if arg.name.as_ref().is_some_and(|name| is_implicit_eno(name)) {
+                if arg.name.as_ref().is_some_and(is_implicit_eno) {
                     continue;
                 }
                 self.diagnostics.push(Diagnostic::error(
@@ -4129,14 +4119,14 @@ impl Checker {
             self.check_integer_expr(index, variables, project, "array index");
         }
         self.check_array_index_constraints(variable, variables, project);
-        if variable.path.len() > 1 || variable.indices.iter().any(|indices| !indices.is_empty()) {
-            if self.variable_type(variable, variables, project).is_none() {
-                self.diagnostics.push(Diagnostic::error(
-                    DiagnosticCode::Semantic,
-                    format!("invalid field or array access '{}'", variable),
-                    None,
-                ));
-            }
+        if (variable.path.len() > 1 || variable.indices.iter().any(|indices| !indices.is_empty()))
+            && self.variable_type(variable, variables, project).is_none()
+        {
+            self.diagnostics.push(Diagnostic::error(
+                DiagnosticCode::Semantic,
+                format!("invalid field or array access '{}'", variable),
+                None,
+            ));
         }
     }
 
@@ -5179,30 +5169,18 @@ fn standard_function_return_type(
         "SQRT" | "LN" | "LOG" | "EXP" | "SIN" | "COS" | "TAN" => SimpleType::Real,
         "EXPT" => SimpleType::Real,
         "ADD" | "SUB" | "MUL" | "DIV" | "MOD" => {
-            if arg_types
-                .iter()
-                .any(|arg_type| *arg_type == SimpleType::Real)
-            {
+            if arg_types.contains(&SimpleType::Real) {
                 SimpleType::Real
-            } else if arg_types
-                .iter()
-                .any(|arg_type| *arg_type == SimpleType::Unknown)
-            {
+            } else if arg_types.contains(&SimpleType::Unknown) {
                 SimpleType::Unknown
             } else {
                 SimpleType::Integer
             }
         }
         "MIN" | "MAX" => {
-            if arg_types
-                .iter()
-                .any(|arg_type| *arg_type == SimpleType::Real)
-            {
+            if arg_types.contains(&SimpleType::Real) {
                 SimpleType::Real
-            } else if arg_types
-                .iter()
-                .any(|arg_type| *arg_type == SimpleType::Unknown)
-            {
+            } else if arg_types.contains(&SimpleType::Unknown) {
                 SimpleType::Unknown
             } else {
                 arg_types.first().copied().unwrap_or(SimpleType::Unknown)
@@ -5226,10 +5204,7 @@ fn standard_function_return_type(
         "NOT" => arg_types.first().copied().unwrap_or(SimpleType::Unknown),
         "LEN" | "FIND" => SimpleType::Integer,
         "LEFT" | "RIGHT" | "MID" | "CONCAT" | "INSERT" | "DELETE" | "REPLACE" => {
-            if arg_types
-                .iter()
-                .any(|arg_type| *arg_type == SimpleType::WString)
-            {
+            if arg_types.contains(&SimpleType::WString) {
                 SimpleType::WString
             } else {
                 SimpleType::String
@@ -5259,7 +5234,7 @@ fn ordered_standard_function_input_exprs<'a>(
     let mut unknown_index = usize::MAX.saturating_sub(args.len());
 
     for arg in args {
-        if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+        if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
             continue;
         }
         let Some(expr) = arg.expr.as_ref() else {

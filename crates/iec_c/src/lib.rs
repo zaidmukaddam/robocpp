@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::too_many_arguments)]
+
 use std::fmt::Write;
 
 use iec_diagnostics::{Diagnostic, DiagnosticCode};
@@ -110,14 +112,13 @@ pub fn generate_c(
     writeln!(out, "    void *rbcpp_target_ctx;").unwrap();
     writeln!(out, "    uint64_t rbcpp_cycle;").unwrap();
     for (var, _) in program_vars_with_retain(program, project) {
-        if emit_function_block_state_declaration(
+        let declared = emit_function_block_state_declaration(
             &mut out,
             &var.name.original,
             &var.type_spec,
             project,
-        ) {
-        } else if emit_aggregate_state_declaration(&mut out, var, project) {
-        } else {
+        ) || emit_aggregate_state_declaration(&mut out, var, project);
+        if !declared {
             writeln!(
                 out,
                 "    {} {};",
@@ -1035,12 +1036,8 @@ fn should_write_io(direction: IoDirection) -> bool {
     matches!(direction, IoDirection::Output | IoDirection::Memory)
 }
 
-fn var_storage_root(name: &str, spec: &DataTypeSpec, project: &Project) -> String {
-    if is_aggregate_spec(spec, project) || is_string_spec(project, spec) {
-        sanitize_c_ident(name)
-    } else {
-        sanitize_c_ident(name)
-    }
+fn var_storage_root(name: &str, _spec: &DataTypeSpec, _project: &Project) -> String {
+    sanitize_c_ident(name)
 }
 
 fn emit_retain_functions(out: &mut String, program: &Pou, project: &Project, state_type: &str) {
@@ -1879,15 +1876,19 @@ fn emit_local_initializer(
 }
 
 fn emit_state_initialization(out: &mut String, var: &VarDecl, project: &Project) {
-    if emit_function_block_state_initialization(out, &var.name.original, &var.type_spec, project) {
-    } else if emit_aggregate_state_initialization(
-        out,
-        &var.name.original,
-        &var.type_spec,
-        var.initial_value.as_ref(),
-        project,
-    ) {
-    } else if let Some(initial) = &var.initial_value {
+    let initialized =
+        emit_function_block_state_initialization(out, &var.name.original, &var.type_spec, project)
+            || emit_aggregate_state_initialization(
+                out,
+                &var.name.original,
+                &var.type_spec,
+                var.initial_value.as_ref(),
+                project,
+            );
+    if initialized {
+        return;
+    }
+    if let Some(initial) = &var.initial_value {
         writeln!(
             out,
             "    s->{} = {};",
@@ -2352,13 +2353,11 @@ fn emit_array_function_return_assignment(
     );
     let en = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_state(expr, var_types, project));
     let eno = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
 
     writeln!(out, "{pad}{{").unwrap();
@@ -2985,13 +2984,11 @@ fn emit_local_array_function_return_assignment(
     );
     let en = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_local_typed(expr, &context.var_types, context.project));
     let eno = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
 
     writeln!(out, "{pad}{{").unwrap();
@@ -3343,13 +3340,11 @@ fn emit_fb_call(
     let instance = &root.original;
     let en_expr = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_state(expr, var_types, project));
     let eno_arg = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
     let body_pad_storage;
     let outer_pad = pad;
@@ -3511,7 +3506,7 @@ fn user_fb_input_target(
     arg: &ParamAssignment,
     positional_index: &mut usize,
 ) -> Option<(VarBlockKind, Identifier)> {
-    if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+    if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
         return None;
     }
     if let Some(name) = &arg.name {
@@ -4350,13 +4345,11 @@ fn emit_nested_user_fb_call(
     let nested_instance = field_key_for_c(outer_instance, &root.original);
     let en_expr = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_for_user_fb(expr, outer_instance, field_types, project));
     let eno_arg = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
     let outer_pad = pad;
     let body_pad_storage;
@@ -4800,13 +4793,11 @@ fn wrap_call_controls_to_c_user_fb(
 ) -> String {
     let en = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_for_user_fb(expr, instance, field_types, project));
     let eno = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
 
     match (en, eno) {
@@ -5780,13 +5771,11 @@ fn emit_standard_void_call(
     };
     let en_expr = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_state(expr, var_types, project));
     let eno_arg = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
     let outer_pad = pad;
     let body_pad_storage;
@@ -5874,13 +5863,11 @@ fn emit_standard_void_call_user_fb(
     };
     let en_expr = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_for_user_fb(expr, instance, field_types, project));
     let eno_arg = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
     let outer_pad = pad;
     let body_pad_storage;
@@ -5953,13 +5940,11 @@ fn emit_standard_void_call_local(
     };
     let en_expr = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_local_typed(expr, &context.var_types, context.project));
     let eno_arg = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
     let outer_pad = pad;
     let body_pad_storage;
@@ -6270,7 +6255,7 @@ fn expr_to_c_local_typed(
 fn call_input_args_to_c(args: &[ParamAssignment]) -> Vec<String> {
     args.iter()
         .filter(|arg| !arg.output)
-        .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
         .filter_map(|arg| arg.expr.as_ref())
         .map(expr_to_c)
         .collect()
@@ -6311,7 +6296,7 @@ fn ordered_user_function_call_input_args(
         return args
             .iter()
             .filter(|arg| !arg.output)
-            .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+            .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
             .filter_map(|arg| arg.expr.as_ref())
             .map(render)
             .collect();
@@ -6328,7 +6313,7 @@ fn ordered_user_function_call_input_args(
     let mut positional_index = 0;
     let mut unknown_index = usize::MAX.saturating_sub(args.len());
     for arg in args {
-        if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+        if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
             continue;
         }
         let Some(expr) = arg.expr.as_ref() else {
@@ -6357,7 +6342,7 @@ fn ordered_user_function_call_input_args(
 fn call_input_args_to_c_local(args: &[ParamAssignment]) -> Vec<String> {
     args.iter()
         .filter(|arg| !arg.output)
-        .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
         .filter_map(|arg| arg.expr.as_ref())
         .map(expr_to_c_local)
         .collect()
@@ -6395,7 +6380,7 @@ fn ordered_call_input_args(
     let mut unknown_index = usize::MAX.saturating_sub(args.len());
 
     for arg in args {
-        if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+        if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
             continue;
         }
         let Some(expr) = arg.expr.as_ref() else {
@@ -6427,7 +6412,7 @@ fn wrap_call_controls_to_c(
 ) -> String {
     let en = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| {
             if local {
@@ -6437,9 +6422,7 @@ fn wrap_call_controls_to_c(
             }
         });
     let eno = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
 
     match (en, eno) {
@@ -6469,13 +6452,11 @@ fn wrap_call_controls_to_c_state(
 ) -> String {
     let en = args
         .iter()
-        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+        .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
         .and_then(|arg| arg.expr.as_ref())
         .map(|expr| expr_to_c_state(expr, var_types, project));
     let eno = args.iter().find(|arg| {
-        arg.output
-            && arg.name.as_ref().is_some_and(|name| is_implicit_eno(name))
-            && arg.variable.is_some()
+        arg.output && arg.name.as_ref().is_some_and(is_implicit_eno) && arg.variable.is_some()
     });
 
     match (en, eno) {
@@ -6730,7 +6711,7 @@ fn first_ordered_standard_input_expr<'a>(
     let mut ordered = Vec::new();
 
     for arg in args {
-        if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+        if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
             continue;
         }
         let Some(expr) = arg.expr.as_ref() else {
@@ -7240,8 +7221,8 @@ fn c_zero_based_indices(offset: usize, ranges: &[Subrange]) -> String {
         let stride = ranges[position + 1..].iter().fold(1_usize, |total, range| {
             total.saturating_mul(array_range_len(range))
         });
-        let index = if stride == 0 { 0 } else { remaining / stride };
-        remaining = if stride == 0 { 0 } else { remaining % stride };
+        let index = remaining.checked_div(stride).unwrap_or(0);
+        remaining = remaining.checked_rem(stride).unwrap_or(0);
         indices.push(index);
     }
     indices

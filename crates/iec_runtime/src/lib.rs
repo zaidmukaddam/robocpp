@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::too_many_arguments)]
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use iec_diagnostics::{Diagnostic, DiagnosticCode};
@@ -894,7 +896,7 @@ fn find_configuration<'a>(
         };
         if expected
             .as_ref()
-            .is_none_or(|expected| *expected == configuration.name.canonical)
+            .map_or(true, |expected| *expected == configuration.name.canonical)
         {
             Some(configuration)
         } else {
@@ -1390,17 +1392,17 @@ fn assign_configuration_access_target(
     };
 
     if let Some(resource) = resource_context {
-        if parts.first() == Some(&resource.name.canonical) {
-            if assign_resource_access_target(
+        if parts.first() == Some(&resource.name.canonical)
+            && assign_resource_access_target(
                 project,
                 resource,
                 &parts[1..],
                 resource_states,
                 programs,
                 value.clone(),
-            ) {
-                return;
-            }
+            )
+        {
+            return;
         }
         if assign_resource_access_target(
             project,
@@ -2878,7 +2880,7 @@ impl Runtime<'_> {
         let mut positional = Vec::new();
         let mut named = BTreeMap::new();
         for arg in args {
-            if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+            if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
                 continue;
             }
             let value = arg
@@ -2939,7 +2941,7 @@ impl Runtime<'_> {
         let mut unknown_index = usize::MAX.saturating_sub(args.len());
 
         for arg in args {
-            if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+            if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
                 continue;
             }
             let Some(expr) = arg.expr.as_ref() else {
@@ -2997,7 +2999,7 @@ impl Runtime<'_> {
     fn standard_string_call_is_wide(&self, args: &[ParamAssignment]) -> bool {
         args.iter()
             .filter(|arg| !arg.output)
-            .filter(|arg| !arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+            .filter(|arg| !arg.name.as_ref().is_some_and(is_implicit_en))
             .filter_map(|arg| arg.expr.as_ref())
             .any(|expr| self.expr_is_wstring_like(expr))
     }
@@ -3035,7 +3037,7 @@ impl Runtime<'_> {
 
     fn function_call_enabled(&mut self, args: &[ParamAssignment]) -> bool {
         args.iter()
-            .find(|arg| !arg.output && arg.name.as_ref().is_some_and(|name| is_implicit_en(name)))
+            .find(|arg| !arg.output && arg.name.as_ref().is_some_and(is_implicit_en))
             .and_then(|arg| arg.expr.as_ref())
             .and_then(|expr| self.eval_expr(expr))
             .and_then(|value| value.as_bool())
@@ -3044,7 +3046,7 @@ impl Runtime<'_> {
 
     fn assign_function_eno(&mut self, args: &[ParamAssignment], value: bool) {
         for arg in args {
-            if !arg.output || !arg.name.as_ref().is_some_and(|name| is_implicit_eno(name)) {
+            if !arg.output || !arg.name.as_ref().is_some_and(is_implicit_eno) {
                 continue;
             }
             if let Some(variable) = &arg.variable {
@@ -3200,9 +3202,7 @@ impl Runtime<'_> {
             return self.env.get(direct).cloned().or(Some(Value::Int(0)));
         }
 
-        let Some(root) = variable.root_name() else {
-            return None;
-        };
+        let root = variable.root_name()?;
         if let Some(ordinal) = self.enum_ordinal_name(&root.canonical) {
             return Some(Value::Int(ordinal));
         }
@@ -3274,8 +3274,8 @@ impl Runtime<'_> {
             return;
         };
         if let Some(key) = flattened_field_key(target) {
-            if self.env.contains_key(&key) {
-                self.env.insert(key, value);
+            if let std::collections::btree_map::Entry::Occupied(mut e) = self.env.entry(key) {
+                e.insert(value);
                 return;
             }
         }
@@ -4222,9 +4222,11 @@ impl Runtime<'_> {
             let old_cu = self.get_field_bool(instance, "_CU");
             let old_cd = self.get_field_bool(instance, "_CD");
             let mut cv = self.get_field_i64(instance, "CV");
-            if cu && !old_cu && !(cd && !old_cd) {
+            let cu_rising = cu && !old_cu;
+            let cd_rising = cd && !old_cd;
+            if cu_rising && !cd_rising {
                 cv += 1;
-            } else if cd && !old_cd && !(cu && !old_cu) {
+            } else if cd_rising && !cu_rising {
                 cv -= 1;
             }
             self.set_field(instance, "CV", Value::Int(cv));
@@ -4308,7 +4310,7 @@ impl Runtime<'_> {
         let input_names = standard_function_block_input_names(type_name);
         let mut positional_index = 0_usize;
         for arg in args {
-            if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+            if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
                 continue;
             }
             let input_name = if let Some(name) = &arg.name {
@@ -4969,7 +4971,7 @@ fn sfc_action_inputs<'a>(
 ) -> Vec<SfcActionInput<'a>> {
     let mut inputs = Vec::new();
     for step in &sfc.steps {
-        let active = active_steps.iter().any(|name| *name == step.name.canonical);
+        let active = active_steps.contains(&step.name.canonical);
         for association in &step.actions {
             if association.name.canonical != action.name.canonical {
                 continue;
@@ -4983,9 +4985,7 @@ fn sfc_action_inputs<'a>(
     }
 
     if inputs.is_empty() {
-        let active = active_steps
-            .iter()
-            .any(|step| *step == action.name.canonical);
+        let active = active_steps.contains(&action.name.canonical);
         inputs.push(SfcActionInput {
             qualifier: action.qualifier,
             duration: action.duration.as_ref(),
@@ -5143,7 +5143,7 @@ fn user_fb_input_target(
     arg: &ParamAssignment,
     positional_index: &mut usize,
 ) -> Option<(VarBlockKind, Identifier)> {
-    if arg.output || arg.name.as_ref().is_some_and(|name| is_implicit_en(name)) {
+    if arg.output || arg.name.as_ref().is_some_and(is_implicit_en) {
         return None;
     }
     if let Some(name) = &arg.name {

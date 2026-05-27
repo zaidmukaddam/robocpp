@@ -12,17 +12,9 @@ pub struct ParseOutput {
     pub diagnostics: Vec<Diagnostic>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ParseOptions {
     pub implementation: ImplementationParameters,
-}
-
-impl Default for ParseOptions {
-    fn default() -> Self {
-        Self {
-            implementation: ImplementationParameters::default(),
-        }
-    }
 }
 
 pub fn parse_project(source_name: impl Into<String>, source: &str) -> ParseOutput {
@@ -1047,12 +1039,9 @@ impl<'a> Parser<'a> {
             })
             .unwrap_or_else(|| Identifier::new("<error>"))
         });
-        let actions = if self.match_symbol(Symbol::Colon) {
-            let actions = self.parse_sfc_action_associations();
-            self.expect_keyword("END_STEP", "expected END_STEP after SFC step actions");
-            self.match_symbol(Symbol::Semicolon);
-            actions
-        } else if is_labeled_form && !self.check_symbol(Symbol::Semicolon) {
+        let actions = if self.match_symbol(Symbol::Colon)
+            || is_labeled_form && !self.check_symbol(Symbol::Semicolon)
+        {
             let actions = self.parse_sfc_action_associations();
             self.expect_keyword("END_STEP", "expected END_STEP after SFC step actions");
             self.match_symbol(Symbol::Semicolon);
@@ -4683,7 +4672,7 @@ line';
 
     #[test]
     fn pseudo_fuzz_corpus_covers_literals_comments_identifiers_and_precedence() {
-        let mut seed = 0x6113_1200_3_u64;
+        let mut seed = 0x0006_1131_2003_u64;
 
         for index in 0..96_u64 {
             seed = seed

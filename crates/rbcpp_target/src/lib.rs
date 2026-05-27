@@ -464,25 +464,13 @@ pub struct SafetyInputs {
     pub reset: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SafetyState {
     pub emergency_stop: bool,
     pub protective_stop: bool,
     pub watchdog_expired: bool,
     pub fault_latched: bool,
     pub outputs_enabled: bool,
-}
-
-impl Default for SafetyState {
-    fn default() -> Self {
-        Self {
-            emergency_stop: false,
-            protective_stop: false,
-            watchdog_expired: false,
-            fault_latched: false,
-            outputs_enabled: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -2540,10 +2528,7 @@ mod tests {
             },
             false,
         );
-        assert_eq!(
-            safe_hal.write_symbol(&output, &Value::Bool(true)).unwrap(),
-            true
-        );
+        assert!(safe_hal.write_symbol(&output, &Value::Bool(true)).unwrap());
 
         let hal = safe_hal.into_inner();
         assert_eq!(hal.image.read(point), Value::Bool(true));
@@ -2587,13 +2572,10 @@ mod tests {
                 value: Value::Bool(true),
             }]
         );
-        assert_eq!(
-            bridge.write(
-                &IoSymbol::new("BatteryPercent", "", IoDirection::Input, "INT"),
-                &Value::Int(0)
-            ),
-            false
-        );
+        assert!(!bridge.write(
+            &IoSymbol::new("BatteryPercent", "", IoDirection::Input, "INT"),
+            &Value::Int(0)
+        ));
         assert_eq!(
             bridge.read(&IoSymbol::new("MaxSpeed", "", IoDirection::Memory, "INT")),
             Some(Value::Int(1200))
@@ -2892,7 +2874,7 @@ mod tests {
         );
         let report = supervisor.end_cycle().unwrap();
         assert!(report.watchdog_expired);
-        assert_eq!(report.safety_state.unwrap().outputs_enabled, false);
+        assert!(!report.safety_state.unwrap().outputs_enabled);
     }
 
     #[test]
