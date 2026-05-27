@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -255,19 +257,6 @@ pub fn diagnostics_to_json(diagnostics: &[Diagnostic]) -> String {
     )
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn diagnostic_json_includes_stable_code() {
-        let diagnostic = Diagnostic::error(DiagnosticCode::Semantic, "bad symbol", None);
-        let json = diagnostic.to_json();
-        assert!(json.contains("\"code\":\"semantic\""));
-        assert!(json.contains("\"stableCode\":\"RBCPP-SEMANTIC\""));
-    }
-}
-
 pub fn json_escape(input: &str) -> String {
     let mut escaped = String::new();
     for ch in input.chars() {
@@ -282,4 +271,17 @@ pub fn json_escape(input: &str) -> String {
         }
     }
     escaped
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn diagnostic_json_includes_stable_code() {
+        let diagnostic = Diagnostic::error(DiagnosticCode::Semantic, "bad symbol", None);
+        let json = diagnostic.to_json();
+        assert!(json.contains("\"code\":\"semantic\""));
+        assert!(json.contains("\"stableCode\":\"RBCPP-SEMANTIC\""));
+    }
 }

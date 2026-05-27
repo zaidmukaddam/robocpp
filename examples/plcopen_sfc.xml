@@ -1,0 +1,32 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <types>
+    <pous>
+      <pou name="SequenceXml" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="Ready"><type><BOOL /></type></variable>
+            <variable name="Done"><type><BOOL /></type></variable>
+            <variable name="Count"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <SFC>
+            <step localId="1" name="Start" initialStep="true">
+              <connectionPointOut />
+            </step>
+            <transition localId="2" name="ToRun">
+              <connectionPointIn><connection refLocalId="1" /></connectionPointIn>
+              <condition><ST><xhtml:p>Ready</xhtml:p></ST></condition>
+            </transition>
+            <macroStep localId="3" name="Run">
+              <connectionPointIn><connection refLocalId="2" /></connectionPointIn>
+            </macroStep>
+            <action localId="4" name="Run" qualifier="P">
+              <ST><xhtml:p>Done := TRUE; Count := Count + 1;</xhtml:p></ST>
+            </action>
+          </SFC>
+        </body>
+      </pou>
+    </pous>
+  </types>
+</project>

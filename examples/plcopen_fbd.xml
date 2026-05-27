@@ -1,0 +1,52 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="BlocksXml" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A"><type><INT /></type></variable>
+            <variable name="B"><type><INT /></type></variable>
+            <variable name="C"><type><INT /></type></variable>
+            <variable name="D"><type><INT /></type></variable>
+            <variable name="E"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <FBD>
+            <inVariable localId="1"><expression>A</expression></inVariable>
+            <inVariable localId="2"><expression>B</expression></inVariable>
+            <inVariable localId="3"><expression>C</expression></inVariable>
+            <block localId="4" typeName="ADD">
+              <inputVariables>
+                <variable formalParameter="IN1">
+                  <connectionPointIn><connection refLocalId="1" /></connectionPointIn>
+                </variable>
+                <variable formalParameter="IN2">
+                  <connectionPointIn><connection refLocalId="2" /></connectionPointIn>
+                </variable>
+              </inputVariables>
+            </block>
+            <block localId="5" typeName="MUL">
+              <inputVariables>
+                <variable formalParameter="IN1">
+                  <connectionPointIn><connection refLocalId="4" /></connectionPointIn>
+                </variable>
+                <variable formalParameter="IN2">
+                  <connectionPointIn><connection refLocalId="3" /></connectionPointIn>
+                </variable>
+              </inputVariables>
+            </block>
+            <outVariable localId="6">
+              <expression>D</expression>
+              <connectionPointIn><connection refLocalId="5" /></connectionPointIn>
+            </outVariable>
+            <outVariable localId="7">
+              <expression>E</expression>
+              <connectionPointIn><connection refLocalId="4" /></connectionPointIn>
+            </outVariable>
+          </FBD>
+        </body>
+      </pou>
+    </pous>
+  </types>
+</project>

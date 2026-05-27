@@ -1,0 +1,15 @@
+PROGRAM NativeFbdDemo
+VAR
+    A : INT := 2;
+    B : INT := 3;
+    C : INT := 0;
+    Ready : BOOL := FALSE;
+END_VAR
+
+FBD
+NETWORK Sum:
+    OUT C := ADD(A, B);
+    OUT Ready := C >= 5;
+END_NETWORK;
+END_FBD
+END_PROGRAM

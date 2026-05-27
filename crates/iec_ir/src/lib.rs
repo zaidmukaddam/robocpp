@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -7,6 +9,7 @@ use iec_profile::EditionProfile;
 pub struct Project {
     pub profile: EditionProfile,
     pub library_elements: Vec<LibraryElement>,
+    pub metadata: BTreeMap<String, String>,
 }
 
 impl Project {
@@ -14,6 +17,7 @@ impl Project {
         Self {
             profile,
             library_elements: Vec::new(),
+            metadata: BTreeMap::new(),
         }
     }
 
@@ -312,10 +316,30 @@ pub enum RetainKind {
     NonRetain,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EdgeQualifier {
+    Rising,
+    Falling,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessDirection {
+    ReadOnly,
+    ReadWrite,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AccessSpec {
+    pub path: String,
+    pub direction: AccessDirection,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct VarDecl {
     pub name: Identifier,
     pub location: Option<String>,
+    pub access: Option<AccessSpec>,
+    pub edge: Option<EdgeQualifier>,
     pub type_spec: DataTypeSpec,
     pub initial_value: Option<Expr>,
 }
@@ -444,6 +468,7 @@ pub enum Literal {
     Real(f64),
     Bool(bool),
     String(String),
+    WString(String),
     DurationMs(i128),
     Date(String),
     TimeOfDay(String),
@@ -495,12 +520,20 @@ impl fmt::Display for VariableRef {
             .enumerate()
             .map(|(index, part)| {
                 let mut text = part.original.clone();
-                if let Some(indices) = self.indices.get(index) {
-                    for index_expr in indices {
-                        text.push('[');
-                        text.push_str(&index_expr.to_string());
-                        text.push(']');
-                    }
+                if let Some(indices) = self
+                    .indices
+                    .get(index)
+                    .filter(|indices| !indices.is_empty())
+                {
+                    text.push('[');
+                    text.push_str(
+                        &indices
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                    );
+                    text.push(']');
                 }
                 text
             })
@@ -513,13 +546,30 @@ impl fmt::Display for VariableRef {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Literal(literal) => write!(f, "{literal:?}"),
+            Expr::Literal(literal) => write!(f, "{literal}"),
             Expr::Variable(variable) => write!(f, "{variable}"),
             Expr::Unary { op, expr } => write!(f, "{op:?} {expr}"),
             Expr::Binary { op, left, right } => write!(f, "({left} {op:?} {right})"),
             Expr::Call { name, .. } => write!(f, "{}(...)", name.original),
             Expr::ArrayLiteral(_) => f.write_str("[...]"),
             Expr::StructLiteral(_) => f.write_str("(...)"),
+        }
+    }
+}
+
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Literal::Int(value) => write!(f, "{value}"),
+            Literal::Real(value) => write!(f, "{value}"),
+            Literal::Bool(value) => f.write_str(if *value { "TRUE" } else { "FALSE" }),
+            Literal::String(value) => write!(f, "'{value}'"),
+            Literal::WString(value) => write!(f, "\"{value}\""),
+            Literal::DurationMs(value) => write!(f, "T#{value}ms"),
+            Literal::Date(value) => write!(f, "D#{value}"),
+            Literal::TimeOfDay(value) => write!(f, "TOD#{value}"),
+            Literal::DateAndTime(value) => write!(f, "DT#{value}"),
+            Literal::Typed { type_name, value } => write!(f, "{}#{value}", type_name.original),
         }
     }
 }
@@ -574,12 +624,23 @@ pub struct Sfc {
 pub struct SfcStep {
     pub name: Identifier,
     pub initial: bool,
+    pub kind: SfcStepKind,
+    pub actions: Vec<SfcActionAssociation>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SfcStepKind {
+    Step,
+    MacroStep,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SfcTransition {
     pub name: Option<Identifier>,
+    pub from: Vec<Identifier>,
+    pub to: Vec<Identifier>,
     pub condition: Option<Expr>,
+    pub priority: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -590,12 +651,20 @@ pub struct SfcAction {
     pub body: Vec<Statement>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct SfcActionAssociation {
+    pub name: Identifier,
+    pub qualifier: Option<SfcActionQualifier>,
+    pub duration: Option<Literal>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SfcActionQualifier {
     NonStored,
     SetStored,
     ResetStored,
     Pulse,
+    PulseFalling,
     TimeLimited,
     TimeDelayed,
     StoredDelayed,
@@ -610,6 +679,7 @@ impl SfcActionQualifier {
             "S" => Some(Self::SetStored),
             "R" => Some(Self::ResetStored),
             "P" | "P1" => Some(Self::Pulse),
+            "P0" => Some(Self::PulseFalling),
             "L" => Some(Self::TimeLimited),
             "D" => Some(Self::TimeDelayed),
             "SD" => Some(Self::StoredDelayed),
@@ -625,6 +695,7 @@ impl SfcActionQualifier {
             Self::SetStored => "S",
             Self::ResetStored => "R",
             Self::Pulse => "P",
+            Self::PulseFalling => "P0",
             Self::TimeLimited => "L",
             Self::TimeDelayed => "D",
             Self::StoredDelayed => "SD",
@@ -663,8 +734,9 @@ pub struct Resource {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Task {
     pub name: Identifier,
-    pub interval: Option<Literal>,
-    pub priority: Option<u32>,
+    pub single: Option<Expr>,
+    pub interval: Option<Expr>,
+    pub priority: Option<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -672,6 +744,7 @@ pub struct ProgramInstance {
     pub name: Identifier,
     pub program_type: Identifier,
     pub task: Option<Identifier>,
+    pub args: Vec<ParamAssignment>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -680,6 +753,7 @@ pub enum Value {
     Int(i64),
     Real(f64),
     String(String),
+    WString(String),
     TimeMs(i128),
     Array(Vec<Value>),
     Struct(BTreeMap<String, Value>),
@@ -722,6 +796,7 @@ impl fmt::Display for Value {
             Value::Int(value) => write!(f, "{value}"),
             Value::Real(value) => write!(f, "{value}"),
             Value::String(value) => write!(f, "'{value}'"),
+            Value::WString(value) => write!(f, "\"{value}\""),
             Value::TimeMs(value) => write!(f, "T#{value}ms"),
             Value::Array(values) => {
                 let text = values
@@ -748,8 +823,10 @@ pub fn default_value_for_type(spec: &DataTypeSpec) -> Value {
     match spec {
         DataTypeSpec::Elementary(ElementaryType::Bool) => Value::Bool(false),
         DataTypeSpec::Elementary(ElementaryType::Real | ElementaryType::Lreal) => Value::Real(0.0),
-        DataTypeSpec::Elementary(ElementaryType::String | ElementaryType::WString)
-        | DataTypeSpec::String { .. } => Value::String(String::new()),
+        DataTypeSpec::Elementary(ElementaryType::String)
+        | DataTypeSpec::String { wide: false, .. } => Value::String(String::new()),
+        DataTypeSpec::Elementary(ElementaryType::WString)
+        | DataTypeSpec::String { wide: true, .. } => Value::WString(String::new()),
         DataTypeSpec::Elementary(
             ElementaryType::Time
             | ElementaryType::Date

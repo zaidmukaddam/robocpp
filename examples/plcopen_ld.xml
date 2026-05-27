@@ -1,0 +1,40 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="LadderXml" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="Start"><type><BOOL /></type></variable>
+            <variable name="Stop"><type><BOOL /></type></variable>
+            <variable name="Override"><type><BOOL /></type></variable>
+            <variable name="Motor"><type><BOOL /></type></variable>
+            <variable name="Latched"><type><BOOL /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <LD>
+            <leftPowerRail localId="1" />
+            <contact localId="2" variable="Start">
+              <connectionPointIn><connection refLocalId="1" /></connectionPointIn>
+            </contact>
+            <contact localId="3" variable="Stop" negated="true">
+              <connectionPointIn><connection refLocalId="2" /></connectionPointIn>
+            </contact>
+            <contact localId="4" variable="Override">
+              <connectionPointIn><connection refLocalId="1" /></connectionPointIn>
+            </contact>
+            <coil localId="5" variable="Motor">
+              <connectionPointIn>
+                <connection refLocalId="3" />
+                <connection refLocalId="4" />
+              </connectionPointIn>
+            </coil>
+            <coil localId="6" variable="Latched" storage="set">
+              <connectionPointIn><connection refLocalId="2" /></connectionPointIn>
+            </coil>
+          </LD>
+        </body>
+      </pou>
+    </pous>
+  </types>
+</project>

@@ -1,0 +1,22 @@
+PROGRAM TextualSfcFile
+VAR
+    Ready : BOOL := TRUE;
+    Count : INT := 0;
+    Done : BOOL := FALSE;
+END_VAR
+
+INITIAL_STEP Start:
+    CountAction(N);
+END_STEP;
+Running: STEP
+    DoneAction(P);
+END_STEP;
+ToRun: TRANSITION FROM Start TO Running := Ready;
+END_TRANSITION;
+CountAction: ACTION
+    Count := Count + 1;
+END_ACTION;
+DoneAction: ACTION
+    Done := TRUE;
+END_ACTION;
+END_PROGRAM

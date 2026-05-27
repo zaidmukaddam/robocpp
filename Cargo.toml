@@ -9,6 +9,7 @@ members = [
     "crates/iec_runtime",
     "crates/iec_c",
     "crates/iec_plcopen",
+    "crates/rbcpp_target",
     "crates/rbcpp_cli",
 ]
 resolver = "2"

@@ -8,8 +8,10 @@ rust-version.workspace = true
 [dependencies]
 iec_diagnostics = { path = "../iec_diagnostics" }
 iec_ir = { path = "../iec_ir" }
+iec_stdlib = { path = "../iec_stdlib" }
 
 [dev-dependencies]
+iec_plcopen = { path = "../iec_plcopen" }
 iec_runtime = { path = "../iec_runtime" }
 iec_syntax = { path = "../iec_syntax" }
 

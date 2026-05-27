@@ -9,5 +9,5 @@ VAR
 END_VAR
 
 Out := CONCAT(LEFT(Text, 2), RIGHT('code', 2));
-Found := FIND(INSERT('ro', 'bo', 3), 'bo');
+Found := FIND(INSERT('ro', 'bo', 2), 'bo');
 END_PROGRAM
