@@ -1,0 +1,8 @@
+<!-- validation: feature=diagnostics.plcopen clause=PLCopen-2.01 -->
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="BrokenXml" pouType="program">
+        <body><FBD>
+  </types>
+</project>

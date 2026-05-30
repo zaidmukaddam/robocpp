@@ -1,0 +1,6 @@
+dist/
+node_modules/
+test-results/
+src/wasm/iec_language_service_wasm/*.wasm
+src/wasm/iec_language_service_wasm/*.ts
+!src/wasm/iec_language_service_wasm/iec_language_service_wasm.d.ts

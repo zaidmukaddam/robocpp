@@ -1,0 +1,31 @@
+<!-- validation: feature=plcopen.vendor-adddata clause=PLCopen-2.01 -->
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <fileHeader companyName="RoboC++ Validation" productName="Vendor AddData Fixture" productVersion="1.0" creationDateTime="2026-05-29T00:00:00" />
+  <contentHeader name="VendorAddDataFixture" modificationDateTime="2026-05-29T00:00:00" />
+  <types>
+    <pous>
+      <pou name="VendorAddDataProgram" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p xmlns:xhtml="http://www.w3.org/1999/xhtml"><![CDATA[A := A + 1;]]></xhtml:p>
+          </ST>
+        </body>
+        <addData>
+          <data name="https://example.invalid/vendor/readiness" handleUnknown="preserve">
+            <vendorElement key="preserve-this-metadata" />
+          </data>
+        </addData>
+      </pou>
+    </pous>
+  </types>
+  <addData>
+    <data name="https://example.invalid/vendor/project" handleUnknown="preserve">
+      <vendorElement projectKey="project-level-metadata" />
+    </data>
+  </addData>
+</project>

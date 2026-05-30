@@ -1,8 +1,8 @@
 # RoboC++ Support And Conformance Notes
 
-RoboC++ is a complete IEC 61131-3:2003 language compiler for the repository's
-current profile. The authoritative machine-readable status is the
-`iec_profile::ComplianceMatrix` surfaced by:
+RoboC++ is complete for the repository's current `2003-strict`
+IEC 61131-3:2003 language profile. The authoritative machine-readable status is
+the `iec_profile::ComplianceMatrix` surfaced by:
 
 ```sh
 rbcpp compliance

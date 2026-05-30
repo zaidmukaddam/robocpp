@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "ban-type-assertions": {
+      "source": "factory-ai/factory-plugins",
+      "sourceType": "github",
+      "skillPath": "plugins/typescript/skills/ban-type-assertions/SKILL.md",
+      "computedHash": "0536b95a5ebceaa45b65023328dbd2bf4b3b25942eaebd9321bc929f569b19b1"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+    },
+    "no-use-effect": {
+      "source": "factory-ai/factory-plugins",
+      "sourceType": "github",
+      "skillPath": "plugins/typescript/skills/no-use-effect/SKILL.md",
+      "computedHash": "3c4d9c9a65312482569bf3ad27d149c5c339567b52009f90ac29d212beee3766"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+    },
+    "simplify": {
+      "source": "factory-ai/factory-plugins",
+      "sourceType": "github",
+      "skillPath": "plugins/core/skills/simplify/SKILL.md",
+      "computedHash": "0e09879aef40eba3dea400539b089e0259a41760a25e2eea10ff43904e9aa4b7"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "575757e3e25761c8c562d6e395d29f0b76c98b1273c0bd72d88e6ab1bc9c7d42"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    }
+  }
+}

@@ -6,11 +6,15 @@ members = [
     "crates/iec_stdlib",
     "crates/iec_syntax",
     "crates/iec_semantics",
+    "crates/iec_language_service",
+    "crates/iec_language_service_wasm",
     "crates/iec_runtime",
     "crates/iec_c",
     "crates/iec_plcopen",
     "crates/rbcpp_target",
     "crates/rbcpp_cli",
+    "crates/rbcpp_target_bridge",
+    "xtask",
 ]
 resolver = "2"
 

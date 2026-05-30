@@ -1,0 +1,16 @@
+(* validation: feature=language.fbd clause=4.3 *)
+PROGRAM NativeFbdDemo
+VAR
+    A : INT := 2;
+    B : INT := 3;
+    Sum : INT := 0;
+    Bigger : BOOL := FALSE;
+END_VAR
+
+FBD
+NETWORK Arithmetic:
+    OUT Sum := A + B;
+    OUT Bigger := Sum > 4;
+END_NETWORK;
+END_FBD
+END_PROGRAM

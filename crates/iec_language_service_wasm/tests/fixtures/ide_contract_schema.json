@@ -1,0 +1,63 @@
+{
+  "analyze_document_json": {
+    "topLevel": ["uri", "diagnostics", "symbols", "completions"],
+    "arrayItems": {
+      "symbols": ["name", "kind", "detail", "containerName", "range"],
+      "completions": ["label", "kind", "detail"]
+    }
+  },
+  "graph_model_json": {
+    "topLevel": ["uri", "pous", "plcopenLayout"]
+  },
+  "validate_graph_json": {
+    "topLevel": ["valid", "diagnostics"]
+  },
+  "run_document_json": {
+    "topLevel": ["program", "source", "cycles", "generatedC"],
+    "arrayItems": {
+      "cycles": ["cycle", "variables", "events"]
+    }
+  },
+  "debug_document_json": {
+    "topLevel": ["uri", "program", "cycles"],
+    "arrayItems": {
+      "cycles": [
+        "cycle",
+        "recordedAt",
+        "watches",
+        "variables",
+        "accessPaths",
+        "activeSfcSteps",
+        "events"
+      ]
+    }
+  },
+  "generated_c_artifact_json": {
+    "topLevel": ["source", "metadata"],
+    "objectKeys": {
+      "metadata": [
+        "filenameHint",
+        "scanEntrypoints",
+        "stateLayout",
+        "ioSymbols",
+        "accessPaths",
+        "retainedFields",
+        "targetHooks",
+        "debugSymbols"
+      ]
+    }
+  },
+  "capabilities_json": {
+    "topLevel": ["profile", "sourceFormats", "features"],
+    "featureFlags": [
+      "diagnostics",
+      "completions",
+      "hover",
+      "simulation",
+      "generatedC",
+      "graphModels",
+      "debugHooks",
+      "generatedCMetadata"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+conformance_profile = "iec61131-3:2003-strict"
+conformance_status = "implemented-for-current-profile"
+production_readiness_status = "validation-required"
+safety_certification_status = "not-certified"
+readiness_evidence_version = "2026.05"

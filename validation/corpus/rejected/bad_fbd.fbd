@@ -1,0 +1,13 @@
+(* validation: feature=diagnostics.fbd clause=4.3 *)
+PROGRAM BadFbd
+VAR
+    A : INT := 1;
+    Out : INT := 0;
+END_VAR
+
+FBD
+NETWORK Broken:
+    OUT Out := A + Missing;
+END_NETWORK;
+END_FBD
+END_PROGRAM

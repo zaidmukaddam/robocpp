@@ -1,0 +1,48 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="IdeGraphContract" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A"><type><INT /></type></variable>
+            <variable name="B"><type><INT /></type></variable>
+            <variable name="C"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <FBD>
+            <inVariable localId="10" width="60" height="20">
+              <position x="100" y="40" />
+              <expression>A</expression>
+            </inVariable>
+            <inVariable localId="11" width="60" height="20">
+              <position x="100" y="90" />
+              <expression>B</expression>
+            </inVariable>
+            <block localId="12" typeName="ADD" width="80" height="60">
+              <position x="240" y="50" />
+              <inputVariables>
+                <variable formalParameter="IN1">
+                  <connectionPointIn><connection refLocalId="10" /></connectionPointIn>
+                </variable>
+                <variable formalParameter="IN2">
+                  <connectionPointIn><connection refLocalId="11" /></connectionPointIn>
+                </variable>
+              </inputVariables>
+            </block>
+            <outVariable localId="13" width="60" height="20">
+              <position x="380" y="60" />
+              <expression>C</expression>
+              <connectionPointIn><connection refLocalId="12" /></connectionPointIn>
+            </outVariable>
+          </FBD>
+        </body>
+      </pou>
+    </pous>
+  </types>
+  <addData>
+    <data name="RobotCo.Contract" handleUnknown="preserve">
+      <vendorElement key="ide-graph-contract" />
+    </data>
+  </addData>
+</project>

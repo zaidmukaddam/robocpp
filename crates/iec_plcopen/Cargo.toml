@@ -10,6 +10,7 @@ iec_diagnostics = { path = "../iec_diagnostics" }
 iec_ir = { path = "../iec_ir" }
 iec_profile = { path = "../iec_profile" }
 iec_syntax = { path = "../iec_syntax" }
+roxmltree = "0.21.1"
 
 [lints]
 workspace = true

@@ -1,0 +1,26 @@
+<plc:project xmlns:plc='http://www.plcopen.org/xml/tc6_0201'
+             xmlns:xhtml="http://www.w3.org/1999/xhtml"
+             xmlns:vendor='urn:robotco:vendor-edge-cases'>
+  <plc:types>
+    <plc:pous>
+      <plc:pou name='VendorEdgeCases' pouType="program">
+        <plc:interface>
+          <plc:localVars>
+            <plc:variable name='A'><plc:type><plc:INT /></plc:type></plc:variable>
+          </plc:localVars>
+        </plc:interface>
+        <plc:body>
+          <plc:FBD>
+            <plc:inVariable localId="10"><plc:expression>A</plc:expression></plc:inVariable>
+            <plc:outVariable localId='11'><plc:expression>A</plc:expression><plc:connectionPointIn><plc:connection refLocalId="10" /></plc:connectionPointIn></plc:outVariable>
+          </plc:FBD>
+        </plc:body>
+        <plc:addData>
+          <plc:data name='urn:robotco:pou-metadata' handleUnknown="preserve">
+            mixed text <vendor:Setting key='RepeatedName'>inner</vendor:Setting>
+          </plc:data>
+        </plc:addData>
+      </plc:pou>
+    </plc:pous>
+  </plc:types>
+</plc:project>

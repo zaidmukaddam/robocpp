@@ -1,0 +1,10 @@
+(* validation: feature=diagnostics.sfc clause=2.6 *)
+PROGRAM BadSfc
+VAR
+    Ready : BOOL := TRUE;
+END_VAR
+
+INITIAL_STEP Start;
+TRANSITION FROM Start TO Missing := Ready;
+END_TRANSITION;
+END_PROGRAM

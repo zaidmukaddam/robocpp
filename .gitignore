@@ -5,3 +5,8 @@
 *.log
 ourdev_569653*.pdf
 /ourdev.html
+
+.agents/
+.claude/
+/fuzz/target/
+/fuzz/artifacts/

@@ -36,7 +36,8 @@ embed.
 
 ## What It Provides
 
-- IEC 61131-3:2003 language compiler for the repository's current profile.
+- IEC 61131-3:2003 language compiler complete for the repository's current
+  `2003-strict` profile.
 - Deterministic scan-cycle interpreter for quick simulation and trace output.
 - Portable generated C backend for embedding scan loops into target runtimes.
 - PLCopen XML 2.01 import/export for graphical LD, FBD, SFC, configurations, and metadata.
@@ -77,17 +78,20 @@ the input project or surrounding integration imposes additional terms.
 
 ## Compiler Scope
 
-RoboC++ is a complete IEC 61131-3:2003 language compiler for the repository's
-current profile. The textual frontend covers ST, IL, textual SFC, native textual
-LD, native textual FBD, configurations, resources, tasks, and access paths.
-PLCopen XML import/export covers graphical LD, FBD, SFC, configurations, and
-exchange metadata. `rbcpp compliance` and `rbcpp todos` report zero remaining
-language-compliance items for this profile.
+RoboC++ is complete for the repository's current `2003-strict`
+IEC 61131-3:2003 language profile. The textual frontend covers ST, IL, textual
+SFC, native textual LD, native textual FBD, configurations, resources, tasks, and
+access paths. PLCopen XML import/export covers graphical LD, FBD, SFC,
+configurations, and exchange metadata. `rbcpp compliance` and `rbcpp todos`
+report zero remaining language-compliance items for this profile.
 
 Target integrations are deliberately provided as adapters around generated scan
 loops. Production deployments should validate timing, retained-state behavior,
 I/O failure behavior, operator-enable behavior, watchdog policy, and hardware
 mapping for their environment.
+
+For the remaining evidence gates before calling RoboC++ production-compiler
+quality for high-consequence deployments, see `PRODUCTION_READINESS.md`.
 
 ## Generated C Runtime Hooks
 

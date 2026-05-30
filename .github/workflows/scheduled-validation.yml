@@ -1,0 +1,40 @@
+name: Scheduled Validation
+
+on:
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  long-running-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        fuzz-target:
+          - textual_parser
+          - plcopen_xml
+          - pipeline
+          - plcopen_roundtrip
+          - plcopen_dom_lowering
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Install nightly for cargo-fuzz
+        run: rustup toolchain install nightly
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Validate corpus
+        run: cargo run -p xtask -- validate-corpus
+      - name: Validate differential suite
+        run: cargo run -p xtask -- validate-differential
+      - name: Validate robustness limits
+        run: cargo run -p xtask -- validate-robustness
+      - name: Validate generated C sanitizers
+        run: cargo run -p xtask -- validate-sanitizers
+      - name: Run long fuzz target
+        working-directory: fuzz
+        run: cargo +nightly fuzz run ${{ matrix.fuzz-target }} -- -max_total_time=1800

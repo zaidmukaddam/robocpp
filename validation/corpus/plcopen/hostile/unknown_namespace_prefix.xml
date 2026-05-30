@@ -1,0 +1,10 @@
+<!-- validation: feature=plcopen.hostile.namespace clause=xml-security -->
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="BrokenNamespace" pouType="program">
+        <body><ST><xhtml:p>A := 1;</xhtml:p></ST></body>
+      </pou>
+    </pous>
+  </types>
+</project>

@@ -1,0 +1,19 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+iec_c = { path = "../crates/iec_c" }
+iec_diagnostics = { path = "../crates/iec_diagnostics" }
+iec_ir = { path = "../crates/iec_ir" }
+iec_plcopen = { path = "../crates/iec_plcopen" }
+iec_profile = { path = "../crates/iec_profile" }
+iec_runtime = { path = "../crates/iec_runtime" }
+iec_semantics = { path = "../crates/iec_semantics" }
+iec_syntax = { path = "../crates/iec_syntax" }
+
+[lints]
+workspace = true

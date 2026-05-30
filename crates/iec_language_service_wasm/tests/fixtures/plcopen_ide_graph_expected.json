@@ -1,0 +1,49 @@
+{
+  "nodeIds": ["10", "11", "12", "13"],
+  "connectorIds": ["10:12:0", "10:12:IN1", "11:12:1", "11:12:IN2", "12:13:0"],
+  "branchGeometry": [
+    {
+      "connectorId": "10:12:0",
+      "from": "10",
+      "to": "12",
+      "formalParameter": null
+    },
+    {
+      "connectorId": "11:12:1",
+      "from": "11",
+      "to": "12",
+      "formalParameter": null
+    },
+    {
+      "connectorId": "10:12:IN1",
+      "from": "10",
+      "to": "12",
+      "formalParameter": "IN1"
+    },
+    {
+      "connectorId": "11:12:IN2",
+      "from": "11",
+      "to": "12",
+      "formalParameter": "IN2"
+    },
+    {
+      "connectorId": "12:13:0",
+      "from": "12",
+      "to": "13",
+      "formalParameter": null
+    }
+  ],
+  "nodePositions": {
+    "10": { "x": "100", "y": "40" },
+    "11": { "x": "100", "y": "90" },
+    "12": { "x": "240", "y": "50" },
+    "13": { "x": "380", "y": "60" }
+  },
+  "nodeSizes": {
+    "10": { "width": "60", "height": "20" },
+    "11": { "width": "60", "height": "20" },
+    "12": { "width": "80", "height": "60" },
+    "13": { "width": "60", "height": "20" }
+  },
+  "vendorAddDataContains": ["RobotCo.Contract", "ide-graph-contract"]
+}

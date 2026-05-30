@@ -18,5 +18,17 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Check
         run: cargo check --workspace
+      - name: Compiler quality gates
+        run: cargo run -p xtask -- hardening-check
       - name: Test
         run: cargo test --workspace
+      - name: Validate production-readiness corpus
+        run: cargo run -p xtask -- validate-corpus
+      - name: Validate generated differential suite
+        run: cargo run -p xtask -- validate-differential
+      - name: Validate robustness limits
+        run: cargo run -p xtask -- validate-robustness
+      - name: Validate generated C sanitizers
+        run: cargo run -p xtask -- validate-sanitizers
+      - name: Fuzz smoke
+        run: cargo run -p xtask -- fuzz-smoke

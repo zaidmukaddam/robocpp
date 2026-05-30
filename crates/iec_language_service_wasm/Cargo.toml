@@ -1,0 +1,22 @@
+[package]
+name = "iec_language_service_wasm"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+iec_diagnostics = { path = "../iec_diagnostics" }
+iec_ir = { path = "../iec_ir" }
+iec_language_service = { path = "../iec_language_service" }
+iec_runtime = { path = "../iec_runtime" }
+wasm-bindgen = "0.2"
+
+[dev-dependencies]
+serde_json = "1"
+
+[lints]
+workspace = true

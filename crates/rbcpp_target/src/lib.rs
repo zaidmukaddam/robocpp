@@ -825,6 +825,39 @@ pub fn load_mapping(root: impl AsRef<Path>, text: &str) -> FileBackedHal {
     FileBackedHal { bindings }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IdeMappingEntry {
+    File { symbol: String, binding: IoBinding },
+    Modbus { symbol: String, point: ModbusPoint },
+}
+
+pub fn parse_ide_mapping_line(root: &Path, line: &str) -> Option<IdeMappingEntry> {
+    let line = line.trim();
+    if line.is_empty() || line.starts_with('#') {
+        return None;
+    }
+    if let Some(payload) = line.strip_prefix("modbus:") {
+        let (symbol, target) = payload.split_once('=')?;
+        let point = ModbusPoint::parse(target.trim())?;
+        return Some(IdeMappingEntry::Modbus {
+            symbol: symbol.trim().to_string(),
+            point,
+        });
+    }
+    if line.starts_with("ethercat:") || line.starts_with("ros2:") {
+        return None;
+    }
+    let (symbol, binding) = parse_mapping_line(root, line)?;
+    Some(IdeMappingEntry::File { symbol, binding })
+}
+
+pub fn parse_ide_mapping(root: impl AsRef<Path>, text: &str) -> Vec<IdeMappingEntry> {
+    let root = root.as_ref();
+    text.lines()
+        .filter_map(|line| parse_ide_mapping_line(root, line))
+        .collect()
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ModbusArea {
     Coil,
@@ -2321,6 +2354,21 @@ mod tests {
         assert_eq!(hal.read(&temperature), Some(Value::Int(275)));
         assert!(!hal.write(&ready, &Value::Bool(false)));
         assert!(!hal.write(&temperature, &Value::Int(0)));
+    }
+
+    #[test]
+    fn ide_mapping_loader_parses_file_and_modbus_rows() {
+        let root = std::path::Path::new("/tmp/workspace");
+        let entries = parse_ide_mapping(
+            root,
+            "# sample
+Motor, io/motor.txt, bool
+modbus: Speed = 1:holding_register:400
+",
+        );
+        assert_eq!(entries.len(), 2);
+        assert!(matches!(entries[0], IdeMappingEntry::File { .. }));
+        assert!(matches!(entries[1], IdeMappingEntry::Modbus { .. }));
     }
 
     #[test]

@@ -1,0 +1,28 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="BlocksXml" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A"><type><INT /></type></variable>
+            <variable name="B"><type><INT /></type></variable>
+            <variable name="D"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body>
+          <FBD>
+            <inVariable localId="1"><expression>A</expression></inVariable>
+            <inVariable localId="2"><expression>B</expression></inVariable>
+            <block localId="3" typeName="ADD">
+              <inputVariables>
+                <variable formalParameter="IN1"><connectionPointIn><connection refLocalId="1" /></connectionPointIn></variable>
+                <variable formalParameter="IN2"><connectionPointIn><connection refLocalId="2" /></connectionPointIn></variable>
+              </inputVariables>
+            </block>
+            <outVariable localId="4"><expression>D</expression><connectionPointIn><connection refLocalId="3" /></connectionPointIn></outVariable>
+          </FBD>
+        </body>
+      </pou>
+    </pous>
+  </types>
+</project>

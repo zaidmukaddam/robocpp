@@ -1,0 +1,7 @@
+<!-- validation: feature=plcopen.hostile.dtd clause=xml-security -->
+<!DOCTYPE project [
+  <!ENTITY ext SYSTEM "file:///etc/passwd">
+]>
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>&ext;</types>
+</project>

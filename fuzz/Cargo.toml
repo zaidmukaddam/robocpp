@@ -1,0 +1,55 @@
+[package]
+name = "rbcpp-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+iec_c = { path = "../crates/iec_c" }
+iec_diagnostics = { path = "../crates/iec_diagnostics" }
+iec_language_service = { path = "../crates/iec_language_service" }
+iec_plcopen = { path = "../crates/iec_plcopen" }
+iec_semantics = { path = "../crates/iec_semantics" }
+iec_syntax = { path = "../crates/iec_syntax" }
+libfuzzer-sys = "0.4"
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "textual_parser"
+path = "fuzz_targets/textual_parser.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "plcopen_xml"
+path = "fuzz_targets/plcopen_xml.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "pipeline"
+path = "fuzz_targets/pipeline.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "plcopen_roundtrip"
+path = "fuzz_targets/plcopen_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "plcopen_dom_lowering"
+path = "fuzz_targets/plcopen_dom_lowering.rs"
+test = false
+doc = false
+bench = false

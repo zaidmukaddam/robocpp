@@ -1,0 +1,20 @@
+[package]
+name = "iec_language_service"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+iec_diagnostics = { path = "../iec_diagnostics" }
+iec_ir = { path = "../iec_ir" }
+iec_plcopen = { path = "../iec_plcopen" }
+iec_profile = { path = "../iec_profile" }
+iec_semantics = { path = "../iec_semantics" }
+iec_stdlib = { path = "../iec_stdlib" }
+iec_syntax = { path = "../iec_syntax" }
+iec_runtime = { path = "../iec_runtime" }
+iec_c = { path = "../iec_c" }
+
+[lints]
+workspace = true

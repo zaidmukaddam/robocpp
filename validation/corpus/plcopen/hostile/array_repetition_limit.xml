@@ -1,0 +1,26 @@
+<!-- validation: feature=plcopen.hostile.array-repetition clause=limits -->
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="ArrayRepeatLimit" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="Values">
+              <type>
+                <array>
+                  <dimension lower="1" upper="2" />
+                  <baseType><INT /></baseType>
+                </array>
+              </type>
+              <initialValue>
+                <arrayValue>
+                  <value repetitionValue="1000001"><simpleValue value="1" /></value>
+                </arrayValue>
+              </initialValue>
+            </variable>
+          </localVars>
+        </interface>
+      </pou>
+    </pous>
+  </types>
+</project>

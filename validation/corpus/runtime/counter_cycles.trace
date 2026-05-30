@@ -1,0 +1,16 @@
+cycle 0
+COUNT = 1
+DONE = FALSE
+LIMIT = 3
+cycle 1
+COUNT = 2
+DONE = FALSE
+LIMIT = 3
+cycle 2
+COUNT = 3
+DONE = FALSE
+LIMIT = 3
+cycle 3
+COUNT = 3
+DONE = TRUE
+LIMIT = 3

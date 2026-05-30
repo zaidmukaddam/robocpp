@@ -1,0 +1,7 @@
+PLCopen XML namespace tc6_0201 was not found; importing best-effort
+unknown type 'REFERENCE TO BOOL'
+unknown type 'IMachineState'
+unknown type 'ISmema'
+unknown type 'IReciverInterface'
+typed literal 'TIME#PT0.02S' is not a valid TIME value
+program instance 'PLC_PRG' references unknown PROGRAM type ''

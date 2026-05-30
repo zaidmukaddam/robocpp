@@ -1,0 +1,14 @@
+<project xmlns="http://www.plcopen.org/xml/tc6_0201">
+  <types>
+    <pous>
+      <pou name="BlocksXml" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="A"><type><INT /></type></variable>
+          </localVars>
+        </interface>
+        <body><FBD><inVariable localId="1"><expression>A</expression></inVariable></FBD></body>
+      </pou>
+    </pous>
+  </types>
+</project>

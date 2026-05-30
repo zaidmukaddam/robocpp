@@ -52,6 +52,12 @@ impl FromStr for EditionProfile {
 
 #[derive(Debug, Clone)]
 pub struct ImplementationParameters {
+    pub max_source_bytes: usize,
+    pub max_plcopen_xml_bytes: usize,
+    pub max_plcopen_xml_nodes: usize,
+    pub max_plcopen_xml_depth: usize,
+    pub max_plcopen_xml_text_bytes: usize,
+    pub max_plcopen_xml_attribute_bytes: usize,
     pub max_identifier_length: usize,
     pub max_comment_length: usize,
     pub max_expression_depth: usize,
@@ -59,6 +65,10 @@ pub struct ImplementationParameters {
     pub max_array_elements: usize,
     pub max_structure_elements: usize,
     pub max_string_length: usize,
+    pub max_pous: usize,
+    pub max_variables: usize,
+    pub max_symbols: usize,
+    pub max_generated_c_bytes: usize,
     pub max_scan_cycles: usize,
     pub pragmas_enabled: bool,
 }
@@ -66,6 +76,12 @@ pub struct ImplementationParameters {
 impl Default for ImplementationParameters {
     fn default() -> Self {
         Self {
+            max_source_bytes: 1_048_576,
+            max_plcopen_xml_bytes: 1_048_576,
+            max_plcopen_xml_nodes: 150_000,
+            max_plcopen_xml_depth: 256,
+            max_plcopen_xml_text_bytes: 65_535,
+            max_plcopen_xml_attribute_bytes: 65_535,
             max_identifier_length: 128,
             max_comment_length: 1_000_000,
             max_expression_depth: 256,
@@ -73,6 +89,10 @@ impl Default for ImplementationParameters {
             max_array_elements: 1_000_000,
             max_structure_elements: 4096,
             max_string_length: 65_535,
+            max_pous: 10_000,
+            max_variables: 100_000,
+            max_symbols: 150_000,
+            max_generated_c_bytes: 1_048_576,
             max_scan_cycles: 10_000,
             pragmas_enabled: false,
         }
@@ -82,6 +102,54 @@ impl Default for ImplementationParameters {
 impl ImplementationParameters {
     pub fn annex_d_report(&self) -> Vec<ImplementationParameter> {
         vec![
+            parameter(
+                "max_source_bytes",
+                "implementation / Annex D",
+                "Maximum textual source size",
+                self.max_source_bytes.to_string(),
+                "bytes",
+                "Applied before lexing textual IEC source.",
+            ),
+            parameter(
+                "max_plcopen_xml_bytes",
+                "PLCopen / Annex D",
+                "Maximum PLCopen XML source size",
+                self.max_plcopen_xml_bytes.to_string(),
+                "bytes",
+                "Applied before importing PLCopen XML.",
+            ),
+            parameter(
+                "max_plcopen_xml_nodes",
+                "PLCopen / Annex D",
+                "Maximum PLCopen XML node count",
+                self.max_plcopen_xml_nodes.to_string(),
+                "nodes",
+                "Applied by the PLCopen XML parser before project lowering.",
+            ),
+            parameter(
+                "max_plcopen_xml_depth",
+                "PLCopen / Annex D",
+                "Maximum PLCopen XML nesting depth",
+                self.max_plcopen_xml_depth.to_string(),
+                "levels",
+                "Applied by the PLCopen XML parser before project lowering.",
+            ),
+            parameter(
+                "max_plcopen_xml_text_bytes",
+                "PLCopen / Annex D",
+                "Maximum PLCopen XML text node size",
+                self.max_plcopen_xml_text_bytes.to_string(),
+                "bytes",
+                "Applied by the PLCopen XML parser before project lowering.",
+            ),
+            parameter(
+                "max_plcopen_xml_attribute_bytes",
+                "PLCopen / Annex D",
+                "Maximum PLCopen XML attribute value size",
+                self.max_plcopen_xml_attribute_bytes.to_string(),
+                "bytes",
+                "Applied by the PLCopen XML parser before project lowering.",
+            ),
             parameter(
                 "max_identifier_length",
                 "2.1.2 / Annex D",
@@ -145,6 +213,38 @@ impl ImplementationParameters {
                 self.max_string_length.to_string(),
                 "characters",
                 "Applied to STRING and WSTRING length declarations.",
+            ),
+            parameter(
+                "max_pous",
+                "2.5 / Annex D",
+                "Maximum POU count",
+                self.max_pous.to_string(),
+                "POUs",
+                "Applied by semantic analysis to project library elements.",
+            ),
+            parameter(
+                "max_variables",
+                "2.4 / Annex D",
+                "Maximum variable declaration count",
+                self.max_variables.to_string(),
+                "variables",
+                "Applied by semantic analysis across POUs and configurations.",
+            ),
+            parameter(
+                "max_symbols",
+                "implementation / Annex D",
+                "Maximum named symbol count",
+                self.max_symbols.to_string(),
+                "symbols",
+                "Applied by semantic analysis across library elements and variables.",
+            ),
+            parameter(
+                "max_generated_c_bytes",
+                "backend / Annex D",
+                "Maximum generated C output size",
+                self.max_generated_c_bytes.to_string(),
+                "bytes",
+                "Applied by the generated C backend.",
             ),
             parameter(
                 "max_scan_cycles",
@@ -855,27 +955,61 @@ mod tests {
     #[test]
     fn human_docs_track_open_compliance_features() {
         let matrix = ComplianceMatrix::for_profile(EditionProfile::Iec61131_3_2003Strict);
-        let todo = include_str!("../../../TODO.md");
         let readme = include_str!("../../../README.md");
         let conformance = include_str!("../../../CONFORMANCE.md");
         let checklist = include_str!("../../../docs/iec61131-2003-checklist.md");
 
         for feature in matrix.open_features() {
             assert!(
-                todo.contains(feature.id),
-                "TODO.md is missing open feature {}",
-                feature.id
-            );
-            assert!(
                 checklist.contains(feature.id),
                 "conformance checklist is missing open feature {}",
                 feature.id
             );
         }
-        assert!(readme.contains("complete IEC 61131-3:2003 language compiler"));
-        assert!(conformance.contains("complete IEC 61131-3:2003 language compiler"));
-        assert!(todo.contains("Compliance Matrix Open Items"));
-        assert!(todo.contains("Full Compiler Completeness Gaps"));
+        assert!(readme.contains("complete for the repository's current `2003-strict`"));
+        assert!(conformance.contains("complete for the repository's current `2003-strict`"));
+        assert_profile_qualified_completeness_claims(&[
+            ("README.md", readme),
+            ("CONFORMANCE.md", conformance),
+            (
+                "PRODUCTION_READINESS.md",
+                include_str!("../../../PRODUCTION_READINESS.md"),
+            ),
+            (
+                "validation/releases/current.md",
+                include_str!("../../../validation/releases/current.md"),
+            ),
+            (
+                "validation/releases/RELEASE_NOTES_CURRENT.md",
+                include_str!("../../../validation/releases/RELEASE_NOTES_CURRENT.md"),
+            ),
+        ]);
+    }
+
+    fn assert_profile_qualified_completeness_claims(docs: &[(&str, &str)]) {
+        for (path, text) in docs {
+            for sentence in profile_claim_sentences(text) {
+                let normalized = sentence.to_ascii_lowercase();
+                if normalized.contains("complete iec 61131")
+                    || normalized.contains("complete compiler")
+                    || normalized.contains("complete language compiler")
+                {
+                    assert!(
+                        normalized.contains("current profile")
+                            || normalized.contains("2003-strict")
+                            || normalized.contains("iec61131-3:2003-strict"),
+                        "{path} has an unqualified compiler-completeness claim: {sentence}"
+                    );
+                }
+            }
+        }
+    }
+
+    fn profile_claim_sentences(text: &str) -> Vec<String> {
+        text.split_terminator(['.', '!', '?'])
+            .map(|part| part.split_whitespace().collect::<Vec<_>>().join(" "))
+            .filter(|part| !part.is_empty())
+            .collect()
     }
 
     #[test]
@@ -920,6 +1054,9 @@ mod tests {
         assert!(report
             .iter()
             .any(|parameter| parameter.id == "max_identifier_length" && parameter.value == "128"));
+        assert!(report.iter().any(|parameter| {
+            parameter.id == "max_plcopen_xml_depth" && parameter.value == "256"
+        }));
         assert!(report
             .iter()
             .any(|parameter| parameter.id == "pragmas_enabled" && parameter.value == "false"));

@@ -1,0 +1,49 @@
+<!-- validation: feature=plcopen.vendor-edge-cases clause=PLCopen-2.01 -->
+<plc:project xmlns:plc='http://www.plcopen.org/xml/tc6_0201'
+             xmlns:xhtml="http://www.w3.org/1999/xhtml"
+             xmlns:vendor='urn:robotco:vendor-edge-cases'>
+  <plc:fileHeader companyName='RobotCo'
+                  productName="Vendor Edge Cases"
+                  productVersion='1.0'
+                  creationDateTime="2026-05-30T00:00:00" />
+  <plc:contentHeader name='VendorEdgeCases'
+                     modificationDateTime="2026-05-30T00:00:00" />
+  <plc:types>
+    <plc:pous>
+      <plc:pou name='VendorEdgeCases' pouType="program">
+        <plc:interface>
+          <plc:localVars>
+            <plc:variable name='A'>
+              <plc:type><plc:INT /></plc:type>
+              <plc:initialValue><plc:simpleValue value="1" /></plc:initialValue>
+            </plc:variable>
+          </plc:localVars>
+        </plc:interface>
+        <plc:body>
+          <plc:ST>
+            <xhtml:p>A := A + 1;</xhtml:p>
+            <xhtml:p><![CDATA[A := A + 2;]]></xhtml:p>
+          </plc:ST>
+        </plc:body>
+        <plc:addData>
+          <plc:data name='urn:robotco:pou-metadata' handleUnknown="preserve">
+            Leading mixed text
+            <vendor:Envelope revision='3'>
+              <vendor:Setting key="RepeatedName">outer</vendor:Setting>
+              <vendor:Group>
+                <vendor:Setting key='RepeatedName'>inner</vendor:Setting>
+                <vendor:Payload quoteStyle="double" alternateQuote='single' />
+              </vendor:Group>
+            </vendor:Envelope>
+            trailing mixed text
+          </plc:data>
+        </plc:addData>
+      </plc:pou>
+    </plc:pous>
+  </plc:types>
+  <plc:addData>
+    <plc:data name="urn:robotco:project-metadata" handleUnknown='preserve'>
+      <vendor:ProjectNote>project-level vendor metadata</vendor:ProjectNote>
+    </plc:data>
+  </plc:addData>
+</plc:project>
