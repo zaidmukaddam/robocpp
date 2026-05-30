@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   explorerPaths,
   fileToTreePath,
+  findLatestArtifactByName,
   isGeneratedArtifactPath,
   isTargetMappingTreePath,
   isTreeFilePath,
@@ -218,7 +219,7 @@ export const ProjectExplorer = forwardRef<ProjectExplorerHandle, ProjectExplorer
         }
         if (isGeneratedArtifactPath(row.dataset.itemPath)) {
           const artifactName = treePathToArtifactName(row.dataset.itemPath);
-          const artifact = artifactsRef.current.find((entry) => entry.name === artifactName);
+          const artifact = findLatestArtifactByName(artifactsRef.current, artifactName);
           if (artifact) {
             handlersRef.current.onSelectArtifact(artifact.id);
           }

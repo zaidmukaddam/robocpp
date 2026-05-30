@@ -5,6 +5,7 @@ import { createSampleProject, renameProjectFile, removeProjectFile, updateProjec
 import { buildExplorerTree, filterExplorerTree } from "@/features/explorer/explorerTree";
 import { addOpenTab, activeFileAfterClose, removeOpenTab, syncOpenTabsWithProject } from "@/features/explorer/openTabs";
 import {
+  explorerPaths,
   filesToTreePaths,
   folderForLanguage,
   treePathToFileName,
@@ -84,6 +85,32 @@ describe("project tree paths", () => {
     const filtered = filterExplorerTree(tree, "counter");
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.children).toHaveLength(1);
+  });
+
+  it("dedupes generated artifact paths for the explorer tree", () => {
+    const project = createSampleProject();
+    const artifacts = [
+      {
+        id: "newest",
+        kind: "trace-export" as const,
+        name: "counter.trace.json",
+        sourceFile: "counter.st",
+        content: "{}",
+        mimeType: "application/json",
+        createdAt: "2026-01-02T00:00:00.000Z"
+      },
+      {
+        id: "older",
+        kind: "trace-export" as const,
+        name: "counter.trace.json",
+        sourceFile: "counter.st",
+        content: "{}",
+        mimeType: "application/json",
+        createdAt: "2026-01-01T00:00:00.000Z"
+      }
+    ];
+    const paths = explorerPaths(project.files, artifacts);
+    expect(paths.filter((path) => path === "Generated/counter.trace.json")).toHaveLength(1);
   });
 });
 

@@ -1,5 +1,22 @@
 import { useMemo, useState } from "react";
+import { Download, FileCode2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { ConfirmDialog } from "@/features/dialogs/ConfirmDialog";
 import { RenameDialog } from "@/features/dialogs/RenameDialog";
 import { artifactKindLabel, isArtifactStale } from "@/lib/artifactLifecycle";
@@ -17,6 +34,59 @@ type ArtifactPanelProps = {
   onClearArtifacts: () => void;
   onRevealSource: (fileName: string) => void;
 };
+
+function formatArtifactTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function ArtifactRowMenu({
+  artifact,
+  onDownload,
+  onRename,
+  onDelete
+}: {
+  artifact: ProjectArtifact;
+  onDownload: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="artifact-row-menu-btn"
+          aria-label={`Actions for ${artifact.name}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <MoreHorizontal aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="artifact-row-menu">
+        <DropdownMenuItem onClick={onDownload}>
+          <Download aria-hidden="true" />
+          Download
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onRename}>
+          <Pencil aria-hidden="true" />
+          Rename
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          <Trash2 aria-hidden="true" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function ArtifactPanel({
   project,
@@ -51,6 +121,27 @@ export function ArtifactPanel({
 
   const comparable = selectedArtifact ? findComparableArtifacts(artifacts, selectedArtifact) : [];
 
+  const previewContent = useMemo(() => {
+    if (!selectedArtifact) {
+      return "";
+    }
+    if (compareLines.length > 0) {
+      return compareLines
+        .slice(0, 120)
+        .map((row) => {
+          if (row.kind === "add") {
+            return `+ ${row.line}: ${row.right}`;
+          }
+          if (row.kind === "remove") {
+            return `- ${row.line}: ${row.left}`;
+          }
+          return `~ ${row.line}: ${row.left} -> ${row.right}`;
+        })
+        .join("\n");
+    }
+    return selectedArtifact.content;
+  }, [compareLines, selectedArtifact]);
+
   return (
     <div className="artifact-panel">
       <ConfirmDialog
@@ -81,116 +172,169 @@ export function ArtifactPanel({
           }
         }}
       />
-      <div className="panel-inline-actions">
-        <button
-          type="button"
-          className="panel-action-btn"
-          disabled={artifacts.length === 0}
-          onClick={() => {
-            for (const artifact of artifacts) {
-              downloadArtifact(artifact);
-            }
-          }}
-        >
-          Download all
-        </button>
-        <button
-          type="button"
-          className="panel-action-btn destructive"
-          disabled={artifacts.length === 0}
-          onClick={() => setClearConfirmOpen(true)}
-        >
-          Clear generated
-        </button>
-      </div>
-      <div className="artifact-table">
-        <div className="table-head artifact-table-head">
-          <span>Name</span>
-          <span>Kind</span>
-          <span>Source</span>
-          <span>Status</span>
-          <span>Actions</span>
+
+      <header className="artifact-toolbar">
+        <div className="artifact-toolbar-meta">
+          <FileCode2 size={14} aria-hidden="true" />
+          <span className="artifact-toolbar-title">Generated artifacts</span>
+          <Badge variant="secondary">{artifacts.length}</Badge>
         </div>
-        {artifacts.length === 0 ? (
-          <div className="empty-row">No generated artifacts yet. Run Check, Build C, or Export to create artifacts.</div>
-        ) : (
-          artifacts.map((artifact) => {
-            const stale = isArtifactStale(artifact, project);
-            const selected = selectedArtifact?.id === artifact.id;
-            return (
-              <div className={`table-row artifact-table-row${selected ? " selected" : ""}`} key={artifact.id}>
-                <button type="button" className="artifact-name-btn" onClick={() => onSelectArtifact(artifact.id)}>
-                  {artifact.name}
-                </button>
-                <span>{artifactKindLabel(artifact.kind)}</span>
-                <button type="button" className="artifact-link-btn" onClick={() => onRevealSource(artifact.sourceFile)}>
-                  {artifact.sourceFile}
-                </button>
-                <span className={stale ? "artifact-stale" : "artifact-current"}>{stale ? "stale" : "current"}</span>
-                <div className="artifact-actions">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => downloadArtifact(artifact)}>
-                    Download
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setRenameArtifactId(artifact.id)}
-                  >
-                    Rename
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => onDeleteArtifact(artifact.id)}>
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-      {selectedArtifact ? (
-        <>
-          {comparable.length > 0 ? (
-            <div className="artifact-compare-controls">
-              <label>
-                Compare with
-                <select
-                  value={compareTargetId ?? ""}
-                  onChange={(event) => setCompareTargetId(event.target.value || null)}
-                >
-                  <option value="">Select artifact…</option>
-                  {comparable.map((artifact) => (
-                    <option key={artifact.id} value={artifact.id}>
-                      {artifact.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {compareTarget ? <span className="artifact-compare-summary">{compareSummary(compareTarget, selectedArtifact)}</span> : null}
+        <div className="artifact-toolbar-actions">
+          <button
+            type="button"
+            className="panel-action-btn"
+            disabled={artifacts.length === 0}
+            onClick={() => {
+              for (const artifact of artifacts) {
+                downloadArtifact(artifact);
+              }
+            }}
+          >
+            Download all
+          </button>
+          <button
+            type="button"
+            className="panel-action-btn destructive"
+            disabled={artifacts.length === 0}
+            onClick={() => setClearConfirmOpen(true)}
+          >
+            Clear generated
+          </button>
+        </div>
+      </header>
+
+      {artifacts.length === 0 ? (
+        <div className="artifact-empty">
+          <FileCode2 size={28} strokeWidth={1.5} aria-hidden="true" />
+          <p>No generated artifacts yet.</p>
+          <small>Run Check, Build C, simulate, or export to create artifacts for this project.</small>
+        </div>
+      ) : (
+        <div className="artifact-layout">
+          <section className="artifact-list" aria-label="Artifact list">
+            <div className="artifact-list-head">
+              <span>Name</span>
+              <span>Kind</span>
+              <span>Status</span>
+              <span className="sr-only">Actions</span>
             </div>
-          ) : null}
-          {compareLines.length > 0 ? (
-            <pre className="artifact-compare-view" aria-label="Artifact compare diff">
-              {compareLines
-                .slice(0, 120)
-                .map((row) => {
-                  if (row.kind === "add") {
-                    return `+ ${row.line}: ${row.right}`;
-                  }
-                  if (row.kind === "remove") {
-                    return `- ${row.line}: ${row.left}`;
-                  }
-                  return `~ ${row.line}: ${row.left} -> ${row.right}`;
-                })
-                .join("\n")}
-            </pre>
-          ) : (
-            <pre className="output-log artifact-preview" aria-label={`Artifact ${selectedArtifact.name}`}>
-              {selectedArtifact.content}
-            </pre>
-          )}
-        </>
-      ) : null}
+            <ScrollArea className="artifact-list-scroll">
+              <div className="artifact-list-body">
+                {artifacts.map((artifact) => {
+                  const stale = isArtifactStale(artifact, project);
+                  const selected = selectedArtifact?.id === artifact.id;
+                  return (
+                    <div
+                      key={artifact.id}
+                      className={`artifact-list-row${selected ? " selected" : ""}`}
+                    >
+                      <div className="artifact-list-primary">
+                        <button
+                          type="button"
+                          className="artifact-list-name-btn"
+                          aria-pressed={selected}
+                          onClick={() => onSelectArtifact(artifact.id)}
+                        >
+                          {artifact.name}
+                        </button>
+                        <div className="artifact-list-meta">
+                          <button
+                            type="button"
+                            className="artifact-source-link"
+                            title={`Open source ${artifact.sourceFile}`}
+                            onClick={() => onRevealSource(artifact.sourceFile)}
+                          >
+                            {artifact.sourceFile}
+                          </button>
+                          <span className="artifact-list-time">{formatArtifactTime(artifact.createdAt)}</span>
+                        </div>
+                      </div>
+                      <span className="artifact-list-kind">{artifactKindLabel(artifact.kind)}</span>
+                      <Badge
+                        variant="outline"
+                        className={stale ? "artifact-status-stale" : "artifact-status-current"}
+                      >
+                        {stale ? "stale" : "current"}
+                      </Badge>
+                      <ArtifactRowMenu
+                        artifact={artifact}
+                        onDownload={() => downloadArtifact(artifact)}
+                        onRename={() => setRenameArtifactId(artifact.id)}
+                        onDelete={() => onDeleteArtifact(artifact.id)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </section>
+
+          <section className="artifact-detail" aria-label="Artifact preview">
+            {selectedArtifact ? (
+              <>
+                <header className="artifact-detail-head">
+                  <div className="artifact-detail-title">
+                    <strong title={selectedArtifact.name}>{selectedArtifact.name}</strong>
+                    <span>{artifactKindLabel(selectedArtifact.kind)}</span>
+                  </div>
+                  <div className="artifact-detail-controls">
+                    {comparable.length > 0 ? (
+                      <Select
+                        value={compareTargetId ?? "__none__"}
+                        onValueChange={(value) => setCompareTargetId(value === "__none__" ? null : value)}
+                      >
+                        <SelectTrigger size="sm" className="artifact-compare-select" aria-label="Compare with">
+                          <SelectValue placeholder="Compare with…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">None</SelectItem>
+                          {comparable.map((artifact) => (
+                            <SelectItem key={artifact.id} value={artifact.id}>
+                              {artifact.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : null}
+                    {compareTarget ? (
+                      <span className="artifact-compare-summary">
+                        {compareSummary(compareTarget, selectedArtifact)}
+                      </span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadArtifact(selectedArtifact)}
+                    >
+                      <Download aria-hidden="true" />
+                      Download
+                    </Button>
+                  </div>
+                </header>
+                <ScrollArea className="artifact-detail-scroll">
+                  <pre
+                    className={
+                      compareLines.length > 0 ? "artifact-compare-view artifact-detail-code" : "artifact-detail-code"
+                    }
+                    aria-label={
+                      compareLines.length > 0
+                        ? "Artifact compare diff"
+                        : `Artifact ${selectedArtifact.name}`
+                    }
+                  >
+                    {previewContent}
+                  </pre>
+                </ScrollArea>
+              </>
+            ) : (
+              <div className="artifact-detail-empty">
+                <p>Select an artifact to preview its contents.</p>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+![RoboC++ banner](rbcpp.png)
+
 # RoboC++
 
 RoboC++ is an open-source IEC 61131-3:2003 compiler and runtime toolkit for

@@ -84,182 +84,199 @@ export function TargetInspectorPanel({
   };
 
   return (
-    <section aria-label="Target deployment" className="target-inspector inspector-section">
-      <h2>Target</h2>
+    <section aria-label="Target deployment" className="target-inspector">
+      <div className="target-inspector-scroll">
+        <h2 className="target-inspector-heading">Target</h2>
 
-      <div className="target-identity-card">
-        <span className="tabular-nums">Program hash: {programHash ?? "—"}</span>
-        <span>Editor match: {editorMatchesTarget ? "yes" : "no"}</span>
-      </div>
-
-      <SafetyPolicyPanel policy={safetyPolicy} onChange={onSafetyPolicyChange} onSave={onSaveSafetyPolicy} />
-
-      {!metadata ? (
-        <div className="target-status-card target-status-pending" role="status">
-          <strong>Deployment coverage pending</strong>
-          <p>Run Build C, then review symbol coverage and deploy preview before download.</p>
-          {buildSourceName ? <p className="target-status-hint">Suggested source: {buildSourceName}</p> : null}
+        <div className="target-identity-card">
+          <span className="tabular-nums">Program hash: {programHash ?? "—"}</span>
+          <span>Editor match: {editorMatchesTarget ? "yes" : "no"}</span>
         </div>
-      ) : actionableIssues.length === 0 ? (
-        <div className="target-status-card target-status-ok" role="status">
-          <strong>Deployment checks passed</strong>
-          <p>Current mapping aligns with the latest generated C metadata.</p>
-        </div>
-      ) : null}
 
-      {actionableIssues.length > 0 ? (
-        <ul className="deploy-validation-list">
-          {actionableIssues.map((issue) => (
-            <li key={issue.message} className={issue.severity}>
-              <span>{issue.message}</span>
-              {issue.remediation ? (
-                <button
-                  type="button"
-                  className="deploy-remediation-btn"
-                  onClick={() => runRemediation(issue.remediation!)}
-                  disabled={issue.remediation === "build-c" && !buildSourceName}
-                >
-                  {REMEDIATION_LABEL[issue.remediation]}
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+        <SafetyPolicyPanel policy={safetyPolicy} onChange={onSafetyPolicyChange} onSave={onSaveSafetyPolicy} />
 
-      {notes.length > 0 ? (
-        <ul className="deploy-validation-notes">
-          {notes.map((issue) => (
-            <li key={issue.message}>
-              <span>{issue.message}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {coverage.length > 0 ? (
-        <div className="target-binding-block">
-          <div className="target-binding-header">
-            <span>Symbol coverage</span>
-            <span className="target-binding-count tabular-nums">{coverage.length}</span>
+        {!metadata ? (
+          <div className="target-status-card target-status-pending" role="status">
+            <strong>Deployment coverage pending</strong>
+            <p>Run Build C, then review symbol coverage and deploy preview before download.</p>
+            {buildSourceName ? <p className="target-status-hint">Suggested source: {buildSourceName}</p> : null}
           </div>
-          <ul className="symbol-coverage-list">
-            {coverage.map((row) => (
-              <CoverageRow key={`${row.symbol}-${row.status}`} row={row} />
-            ))}
-          </ul>
-        </div>
-      ) : null}
+        ) : actionableIssues.length === 0 ? (
+          <div className="target-status-card target-status-ok" role="status">
+            <strong>Deployment checks passed</strong>
+            <p>Current mapping aligns with the latest generated C metadata.</p>
+          </div>
+        ) : null}
 
-      <div className="target-binding-block">
-        <div className="target-binding-header">
-          <span>Bindings</span>
-          <span className="target-binding-count tabular-nums">{entries.length}</span>
-        </div>
-        {entries.length === 0 ? (
-          <p className="target-binding-empty">No bindings yet. Open the mapping editor to add transport targets.</p>
-        ) : (
-          <ul className="target-binding-list">
-            {entries.map((entry) => (
-              <li key={entry.id} className="target-binding-row">
-                <div className="target-binding-row-head">
-                  <MappingKindBadge kind={entry.kind} compact />
-                  <span className="target-binding-symbol">{entry.symbol}</span>
-                </div>
-                <span className="target-binding-meta">
-                  {entry.kind === "file" && entry.encoding ? entry.encoding : entry.kind}
-                </span>
-                <span className="target-binding-target" title={entry.target}>
-                  {entry.target}
-                </span>
+        {actionableIssues.length > 0 ? (
+          <ul className="deploy-validation-list">
+            {actionableIssues.map((issue) => (
+              <li key={issue.message} className={issue.severity}>
+                <span>{issue.message}</span>
+                {issue.remediation ? (
+                  <button
+                    type="button"
+                    className="deploy-remediation-btn"
+                    onClick={() => runRemediation(issue.remediation!)}
+                    disabled={issue.remediation === "build-c" && !buildSourceName}
+                  >
+                    {REMEDIATION_LABEL[issue.remediation]}
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        ) : null}
 
-      {hardwareConnected ? (
+        {notes.length > 0 ? (
+          <ul className="deploy-validation-notes">
+            {notes.map((issue) => (
+              <li key={issue.message}>
+                <span>{issue.message}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {coverage.length > 0 ? (
+          <div className="target-binding-block">
+            <div className="target-binding-header">
+              <span>Symbol coverage</span>
+              <span className="target-binding-count tabular-nums">{coverage.length}</span>
+            </div>
+            <ul className="symbol-coverage-list">
+              {coverage.map((row) => (
+                <CoverageRow key={`${row.symbol}-${row.status}`} row={row} />
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <div className="target-binding-block">
           <div className="target-binding-header">
-            <span>Live I/O</span>
-            <span className="target-binding-count tabular-nums">{liveIoValues.length}</span>
+            <span>Bindings</span>
+            <span className="target-binding-count tabular-nums">{entries.length}</span>
           </div>
-          {liveIoValues.length === 0 ? (
-            <p className="target-binding-empty">Connected. Use Refresh I/O in the target menu to read mapped values.</p>
+          {entries.length === 0 ? (
+            <p className="target-binding-empty">No bindings yet. Open the mapping editor to add transport targets.</p>
           ) : (
-            <ul className="target-binding-list" aria-label="Live target I/O values">
-              {liveIoValues.map((row) => (
-                <li key={`${row.symbol}-${row.kind}`} className="target-binding-row">
+            <ul className="target-binding-list">
+              {entries.map((entry) => (
+                <li key={entry.id} className="target-binding-row">
                   <div className="target-binding-row-head">
-                    <span className="target-binding-symbol">{row.symbol}</span>
-                    <span className="target-binding-meta">{row.kind}</span>
+                    <MappingKindBadge kind={entry.kind} compact />
+                    <span className="target-binding-symbol">{entry.symbol}</span>
                   </div>
-                  <span className="target-binding-target" title={row.target ?? undefined}>
-                    {row.target ?? "—"}
+                  <span className="target-binding-meta">
+                    {entry.kind === "file" && entry.encoding ? entry.encoding : entry.kind}
                   </span>
-                  <span className="target-live-io-value tabular-nums">{formatIoValue(row.value)}</span>
+                  <span className="target-binding-target" title={entry.target}>
+                    {entry.target}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </div>
-      ) : null}
 
-      {adapterArtifacts.length > 0 ? (
-        <div className="target-binding-block">
-          <div className="target-binding-header">
-            <span>Adapter artifacts</span>
-            <span className="target-binding-count tabular-nums">{adapterArtifacts.length}</span>
+        {hardwareConnected ? (
+          <div className="target-binding-block">
+            <div className="target-binding-header">
+              <span>Live I/O</span>
+              <span className="target-binding-count tabular-nums">{liveIoValues.length}</span>
+            </div>
+            {liveIoValues.length === 0 ? (
+              <p className="target-binding-empty">Connected. Use Refresh I/O in the target menu to read mapped values.</p>
+            ) : (
+              <ul className="target-binding-list" aria-label="Live target I/O values">
+                {liveIoValues.map((row) => (
+                  <li key={`${row.symbol}-${row.kind}`} className="target-binding-row">
+                    <div className="target-binding-row-head">
+                      <span className="target-binding-symbol">{row.symbol}</span>
+                      <span className="target-binding-meta">{row.kind}</span>
+                    </div>
+                    <span className="target-binding-target" title={row.target ?? undefined}>
+                      {row.target ?? "—"}
+                    </span>
+                    <span className="target-live-io-value tabular-nums">{formatIoValue(row.value)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <ul className="adapter-artifacts-list">
-            {adapterArtifacts.map((artifact) => (
-              <li key={artifact.name}>{artifact.name}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+        ) : null}
 
-      <div className="target-inspector-actions">
-        <button type="button" className="target-open-mapping-btn" onClick={onOpenMapping}>
-          <FileText size={13} aria-hidden="true" />
-          Open {mappingFileName.split("/").pop()}
-        </button>
-        <button
-          type="button"
-          className="target-build-c-btn"
-          onClick={onBuildC}
-          disabled={!buildSourceName}
-          title={buildSourceName ? `Build C from ${buildSourceName}` : "Add a PLC program file first"}
-        >
-          <Box size={13} aria-hidden="true" />
-          Build C
-        </button>
-        <button type="button" className="target-open-mapping-btn" onClick={onPreviewDeploy} disabled={!metadata}>
-          Preview deploy
-        </button>
-        <button type="button" className="target-open-mapping-btn" onClick={onRevalidateDeploy} disabled={!metadata}>
-          Revalidate
-        </button>
-        <button type="button" className="target-open-mapping-btn" onClick={onSaveDeployBaseline} disabled={!deployPreview}>
-          Save baseline
-        </button>
+        {adapterArtifacts.length > 0 ? (
+          <div className="target-binding-block">
+            <div className="target-binding-header">
+              <span>Adapter artifacts</span>
+              <span className="target-binding-count tabular-nums">{adapterArtifacts.length}</span>
+            </div>
+            <ul className="adapter-artifacts-list">
+              {adapterArtifacts.map((artifact) => (
+                <li key={artifact.name}>{artifact.name}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {diffChanges.length > 0 ? (
+          <div className="target-binding-block">
+            <div className="target-binding-header">
+              <span>Deploy diff</span>
+              <span className="target-binding-count tabular-nums">{diffChanges.length}</span>
+            </div>
+            <ul className="deploy-diff-list" aria-label="Deploy diff">
+              {diffChanges.map((entry) => (
+                <li key={`${entry.path}-${entry.status}`} className={`deploy-diff-${entry.status}`}>
+                  <strong>{entry.status}</strong> {entry.path}: {entry.detail}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {deployPreview ? (
+          <div className="target-binding-block target-deploy-preview-block">
+            <div className="target-binding-header">
+              <span>Deploy preview</span>
+            </div>
+            <pre className="deploy-preview" aria-label="Deploy package preview">
+              {deployPreview}
+            </pre>
+          </div>
+        ) : null}
       </div>
 
-      {diffChanges.length > 0 ? (
-        <ul className="deploy-diff-list" aria-label="Deploy diff">
-          {diffChanges.map((entry) => (
-            <li key={`${entry.path}-${entry.status}`} className={`deploy-diff-${entry.status}`}>
-              <strong>{entry.status}</strong> {entry.path}: {entry.detail}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {deployPreview ? (
-        <pre className="deploy-preview" aria-label="Deploy package preview">
-          {deployPreview}
-        </pre>
-      ) : null}
+      <footer className="target-inspector-actions">
+        <div className="target-inspector-actions-row">
+          <button type="button" className="target-open-mapping-btn" onClick={onOpenMapping}>
+            <FileText size={13} aria-hidden="true" />
+            Open {mappingFileName.split("/").pop()}
+          </button>
+          <button
+            type="button"
+            className="target-build-c-btn"
+            onClick={onBuildC}
+            disabled={!buildSourceName}
+            title={buildSourceName ? `Build C from ${buildSourceName}` : "Add a PLC program file first"}
+          >
+            <Box size={13} aria-hidden="true" />
+            Build C
+          </button>
+        </div>
+        <div className="target-inspector-actions-row target-inspector-actions-row-secondary">
+          <button type="button" className="target-open-mapping-btn" onClick={onPreviewDeploy} disabled={!metadata}>
+            Preview
+          </button>
+          <button type="button" className="target-open-mapping-btn" onClick={onRevalidateDeploy} disabled={!metadata}>
+            Revalidate
+          </button>
+          <button type="button" className="target-open-mapping-btn" onClick={onSaveDeployBaseline} disabled={!deployPreview}>
+            Save baseline
+          </button>
+        </div>
+      </footer>
     </section>
   );
 }

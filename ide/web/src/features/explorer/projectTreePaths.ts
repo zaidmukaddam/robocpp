@@ -49,6 +49,27 @@ export function artifactsToTreePaths(artifacts: ProjectArtifact[]): string[] {
   return artifacts.map(artifactToTreePath);
 }
 
+/** Keep the newest artifact per display name for tree paths (store is newest-first). */
+export function dedupeArtifactsByName(artifacts: ProjectArtifact[]): ProjectArtifact[] {
+  const seen = new Set<string>();
+  const unique: ProjectArtifact[] = [];
+  for (const artifact of artifacts) {
+    if (seen.has(artifact.name)) {
+      continue;
+    }
+    seen.add(artifact.name);
+    unique.push(artifact);
+  }
+  return unique;
+}
+
+export function findLatestArtifactByName(
+  artifacts: ProjectArtifact[],
+  name: string
+): ProjectArtifact | undefined {
+  return artifacts.find((artifact) => artifact.name === name);
+}
+
 export function isGeneratedArtifactPath(path: string): boolean {
   return path.startsWith(`${GENERATED_FOLDER}/`);
 }
@@ -58,7 +79,7 @@ export function treePathToArtifactName(path: string): string {
 }
 
 export function explorerPaths(files: WorkspaceFile[], artifacts: ProjectArtifact[]): string[] {
-  return [...filesToTreePaths(files), ...artifactsToTreePaths(artifacts)];
+  return [...filesToTreePaths(files), ...artifactsToTreePaths(dedupeArtifactsByName(artifacts))];
 }
 
 export function treePathsSignature(files: WorkspaceFile[]): string {
