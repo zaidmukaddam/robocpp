@@ -43,14 +43,15 @@ type CommandBarProps = {
 
 type CommandMenuProps = {
   label: string;
+  ariaLabel: string;
   children: ReactNode;
 };
 
-function CommandMenu({ label, children }: CommandMenuProps) {
+function CommandMenu({ label, ariaLabel, children }: CommandMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" aria-label={ariaLabel}>
           {label}
           <ChevronDown data-icon="inline-end" />
         </Button>
@@ -83,7 +84,7 @@ export function CommandBar({
   return (
     <div className="commandbar" role="toolbar" aria-label="Studio actions">
       <div className="commandbar-inner">
-        <CommandMenu label="Project">
+        <CommandMenu label="Project" ariaLabel="Project menu">
           <DropdownMenuItem onClick={onNewProject}>
             <Plus />
             New project
@@ -102,7 +103,7 @@ export function CommandBar({
           </DropdownMenuItem>
         </CommandMenu>
 
-        <CommandMenu label="Build">
+        <CommandMenu label="Build" ariaLabel="Build menu">
           <DropdownMenuItem onClick={onCheck}>
             <CheckCircle2 />
             Check project
@@ -117,7 +118,7 @@ export function CommandBar({
           </DropdownMenuItem>
         </CommandMenu>
 
-        <CommandMenu label="Exchange">
+        <CommandMenu label="Exchange" ariaLabel="Exchange menu">
           <DropdownMenuItem onClick={onImportBundle}>
             <Upload />
             Import project bundle
@@ -138,7 +139,13 @@ export function CommandBar({
 
         <div className="commandbar-spacer" aria-hidden="true" />
 
-        <Button size="sm" disabled={running} title="Run simulation (F5)" onClick={onRun}>
+        <Button
+          size="sm"
+          disabled={running}
+          title="Run simulation (F5)"
+          aria-label={running ? "Simulation running" : "Run simulation"}
+          onClick={onRun}
+        >
           <Play data-icon="inline-start" />
           {running ? "Running…" : "Run"}
         </Button>

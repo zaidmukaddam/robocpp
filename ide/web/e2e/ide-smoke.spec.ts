@@ -20,7 +20,7 @@ test("loads the sample IDE workspace and runs the active program", async ({ page
   await expect(page.getByRole("tab", { name: /Symbols 3/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "program Counter PROGRAM L1" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.getByRole("button", { name: "Run simulation" }).click();
 
   const outputPanel = page.getByRole("region", { name: "Output panel" });
   await expect(page.getByRole("tab", { name: "Scan Trace" })).toHaveAttribute("aria-selected", "true");

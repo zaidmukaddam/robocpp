@@ -57,8 +57,10 @@ describe("browser smoke flows", () => {
       />
     );
     expect(screen.getByRole("toolbar", { name: "Studio actions" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Project/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Run/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Project menu" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Build menu" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Exchange menu" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Run simulation" })).toBeTruthy();
   });
 
   it("checks a sample ST file through the local analysis path", () => {

@@ -47,6 +47,9 @@ function SymbolField({
   onChange: (symbol: string) => void;
 }) {
   if (symbolSuggestions.length > 0) {
+    const options = symbolSuggestions.includes(entry.symbol)
+      ? symbolSuggestions
+      : [entry.symbol, ...symbolSuggestions].filter(Boolean);
     return (
       <Select value={entry.symbol} onValueChange={onChange}>
         <SelectTrigger className="mapping-field-control" aria-label={`PLC symbol for ${entry.kind} binding`}>
@@ -54,7 +57,7 @@ function SymbolField({
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            {symbolSuggestions.map((name) => (
+            {options.map((name) => (
               <SelectItem key={name} value={name}>
                 {name}
               </SelectItem>

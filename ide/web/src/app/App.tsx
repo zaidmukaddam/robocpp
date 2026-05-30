@@ -812,6 +812,10 @@ export function App() {
       if (!artifact) {
         return;
       }
+      if (project.files.some((file) => file.name === artifact.sourceFile)) {
+        setOpenTabNames((tabs) => addOpenTab(tabs, artifact.sourceFile));
+        setActiveFileName(artifact.sourceFile);
+      }
       if (artifact.kind === "trace-export") {
         try {
           const parsed = JSON.parse(artifact.content) as DebugTrace;

@@ -109,6 +109,31 @@ END_NETWORK`
     expect(deleted).not.toMatch(/\bRemoved\b/);
   });
 
+  it("adds FBD networks with declared unique placeholder variables", () => {
+    const base = workspaceFiles.find((entry) => entry.name === "native_fbd.fbd");
+    expect(base).toBeTruthy();
+
+    const first = applyGraphEdit(base!, "add-network");
+    expect(first).toContain("NewOutput : BOOL;");
+    expect(first).toContain("NewInputA : BOOL;");
+    expect(first).toContain("NewInputB : BOOL;");
+    expect(first).toContain("OUT NewOutput := AND(NewInputA, NewInputB);");
+
+    const second = applyGraphEdit(fileWithText(base!, first), "add-network");
+    expect(second).toContain("NewOutput1 : BOOL;");
+    expect(second).toContain("NewInputA1 : BOOL;");
+    expect(second).toContain("NewInputB1 : BOOL;");
+    expect(second).toContain("OUT NewOutput1 := AND(NewInputA1, NewInputB1);");
+  });
+
+  it("does not append native FBD text to PLCopen XML graph edits", () => {
+    const base = workspaceFiles.find((entry) => entry.name === "plcopen_fbd.xml");
+    expect(base).toBeTruthy();
+
+    expect(applyGraphEdit(base!, "add-network")).toBe(base!.text);
+    expect(applyGraphEdit(base!, "add-fbd-literal")).toBe(base!.text);
+  });
+
   it("adds and deletes SFC transitions through the graph document", () => {
     const base = workspaceFiles.find((entry) => entry.name === "sequence.sfc");
     expect(base).toBeTruthy();
@@ -130,6 +155,17 @@ END_NETWORK`
       .withFile(fileWithText(base!, added!.nextText), addedModel, { valid: true, diagnostics: [] })
       .apply("delete-selected", transition!.name ?? transition!.stableId, transitionSelection);
     expect(deleted?.nextText).not.toContain(`TRANSITION ${transition!.name}`);
+  });
+
+  it("generates unique SFC step labels", () => {
+    const base = workspaceFiles.find((entry) => entry.name === "sequence.sfc");
+    expect(base).toBeTruthy();
+
+    const first = applyGraphEdit(base!, "add-step");
+    const second = applyGraphEdit(fileWithText(base!, first), "add-step");
+    expect(first).toContain("STEP NewStep;");
+    expect(second).toContain("STEP NewStep1;");
+    expect(second.match(/STEP NewStep;/g)).toHaveLength(1);
   });
 
   it("serializes LD element comments into source and re-parses them", () => {
