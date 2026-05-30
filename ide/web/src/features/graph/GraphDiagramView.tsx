@@ -45,6 +45,7 @@ export function GraphDiagramView({
   const [selection, setSelection] = useState<GraphSelection | null>(null);
   const [connectSource, setConnectSource] = useState<GraphSelection | null>(null);
   const [renameLabel, setRenameLabel] = useState<string | null>(null);
+  const [graphMessage, setGraphMessage] = useState<string | null>(null);
   const clipboardRef = useRef<string | null>(null);
   const displayModel = useMemo(() => enrichGraphModelForDisplay(file, model), [file, model]);
   const pou = displayModel?.pous[0] ?? null;
@@ -58,27 +59,31 @@ export function GraphDiagramView({
   );
 
   const selectedLabel = useMemo(() => {
-    if (!model) {
+    if (!displayModel) {
       return null;
     }
-    return selectionLabel(file, model, selection);
-  }, [file, model, selection]);
+    return selectionLabel(file, displayModel, selection);
+  }, [file, displayModel, selection]);
 
   const selectedNetworkIndex = useMemo(
-    () => (model ? networkIndexFromSelection(model, selection) : null),
-    [model, selection]
+    () => (displayModel ? networkIndexFromSelection(displayModel, selection) : null),
+    [displayModel, selection]
   );
 
-  if (!model || !pou) {
+  if (!displayModel || !pou) {
     return <p className="diagram-empty">No graphical model available for this document.</p>;
   }
 
-  const apply = (action: GraphEditAction, payload?: string) => {
-    const document = createGraphDocument(file, model, validation);
+  const apply = (action: GraphEditAction, payload?: string): boolean => {
+    const document = createGraphDocument(file, displayModel, validation);
     const patch = document.apply(action, payload, selection);
     if (patch) {
       onChange(patch.nextText);
+      setGraphMessage(null);
+      return true;
     }
+    setGraphMessage("That graph edit is not available for the current selection.");
+    return false;
   };
 
   const handleRename = () => {
@@ -105,13 +110,21 @@ export function GraphDiagramView({
     ) {
       if (file.languageId === "xml") {
         if (connectSource.stableId !== next.stableId) {
-          apply("connect", `${connectSource.stableId}->${next.stableId}`);
+          const connected = apply("connect", `${connectSource.stableId}->${next.stableId}`);
+          if (!connected) {
+            setGraphMessage("No valid connection was created for those XML nodes.");
+          }
         }
       } else {
-        const sourceLabel = selectionLabel(file, model, connectSource);
-        const targetLabel = selectionLabel(file, model, next);
+        const sourceLabel = selectionLabel(file, displayModel, connectSource);
+        const targetLabel = selectionLabel(file, displayModel, next);
         if (sourceLabel && targetLabel && sourceLabel !== targetLabel) {
-          apply("connect", `${sourceLabel}->${targetLabel}`);
+          const connected = apply("connect", `${sourceLabel}->${targetLabel}`);
+          if (!connected) {
+            setGraphMessage("No valid connection was created for those FBD nodes.");
+          }
+        } else {
+          setGraphMessage("Choose two different FBD nodes to create a connection.");
         }
       }
       setConnectSource(null);
@@ -119,6 +132,7 @@ export function GraphDiagramView({
       return;
     }
     setSelection(next);
+    setGraphMessage(null);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -245,20 +259,26 @@ export function GraphDiagramView({
           ) : null}
           {file.languageId === "fbd" || file.languageId === "xml" ? (
             <>
-              <Button type="button" size="sm" variant="secondary" onClick={() => apply("add-network")}>
-                Add network
-              </Button>
+              {file.languageId === "fbd" ? (
+                <Button type="button" size="sm" variant="secondary" onClick={() => apply("add-network")}>
+                  Add network
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
+                disabled={selection?.kind !== "node"}
+                title={selection?.kind === "node" ? undefined : "Select a node before starting a connection."}
                 onClick={() => setConnectSource(connectSource ? null : selection)}
               >
                 {connectSource ? "Cancel connect" : "Connect"}
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => apply("add-fbd-literal")}>
-                Add literal
-              </Button>
+              {file.languageId === "fbd" ? (
+                <Button type="button" size="sm" variant="ghost" onClick={() => apply("add-fbd-literal")}>
+                  Add literal
+                </Button>
+              ) : null}
             </>
           ) : null}
           {file.languageId === "sfc" ? (
@@ -326,6 +346,12 @@ export function GraphDiagramView({
         {selectedLabel ? <span className="graph-selection-label">Selected: {selectedLabel}</span> : null}
       </div>
 
+      {graphMessage ? (
+        <div className="graph-feedback-banner" role="status">
+          {graphMessage}
+        </div>
+      ) : null}
+
       {staleWarnings.length > 0 ? (
         <div className="graph-stale-banner" role="status">
           {staleWarnings.map((warning) => (
@@ -344,7 +370,7 @@ export function GraphDiagramView({
       ) : null}
 
       <div className="graph-diagram-body">
-        <GraphCanvas>
+        <GraphCanvas key={file.name}>
           {pou.sfc ? (
             <SfcGraphView
               sfc={pou.sfc}
@@ -352,9 +378,9 @@ export function GraphDiagramView({
               activeSteps={activeSteps}
               onSelect={setSelection}
             />
-          ) : file.languageId === "xml" && model.plcopenLayout.nodeIds.length > 0 ? (
+          ) : file.languageId === "xml" && displayModel.plcopenLayout.nodeIds.length > 0 ? (
             <PlcopenGraphView
-              model={model}
+              model={displayModel}
               selection={selection}
               traceLabels={traceLabels}
               onSelect={handleNodeSelect}
@@ -375,7 +401,7 @@ export function GraphDiagramView({
         </GraphCanvas>
         <GraphPropertyPanel
           file={file}
-          model={model}
+          model={displayModel}
           selection={selection}
           validation={validation}
           onApplyRename={(currentLabel, nextLabel) => apply("rename", `${currentLabel}->${nextLabel}`)}

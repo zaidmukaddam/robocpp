@@ -48,6 +48,38 @@ function splitFbdArgs(args: string): string[] {
     .filter(Boolean);
 }
 
+function declaredVariableNames(text: string): Set<string> {
+  const names = new Set<string>();
+  const varBlock = text.match(/VAR\s*([\s\S]*?)\s*END_VAR/i)?.[1] ?? "";
+  for (const match of varBlock.matchAll(/^\s*([A-Za-z_]\w*)\s*:/gm)) {
+    names.add(match[1]!);
+  }
+  return names;
+}
+
+function uniqueIdentifier(base: string, used: Iterable<string>): string {
+  const taken = new Set(used);
+  if (!taken.has(base)) {
+    return base;
+  }
+  let index = 1;
+  while (taken.has(`${base}${index}`)) {
+    index += 1;
+  }
+  return `${base}${index}`;
+}
+
+function insertVarDeclarations(text: string, declarations: string[]): string {
+  if (declarations.length === 0) {
+    return text;
+  }
+  const lines = declarations.map((declaration) => `    ${declaration} : BOOL;`).join("\n");
+  if (/VAR\s*[\s\S]*?\s*END_VAR/i.test(text)) {
+    return text.replace(/(\s*END_VAR)/i, `\n${lines}$1`);
+  }
+  return text.replace(/(PROGRAM\s+\w+\s*)/i, `$1\nVAR\n${lines}\nEND_VAR\n`);
+}
+
 export type GraphEditAction =
   | "add-rung"
   | "add-network"
@@ -190,14 +222,23 @@ END_RUNG
 
 export function appendFbdNetwork(text: string): string {
   const marker = "END_FBD";
+  const declared = declaredVariableNames(text);
+  const existingNames = new Set([...declared, ...Array.from(text.matchAll(/\b(NewOutput\d*|NewInputA\d*|NewInputB\d*)\b/g), (match) => match[1]!)]);
+  const output = uniqueIdentifier("NewOutput", existingNames);
+  existingNames.add(output);
+  const inputA = uniqueIdentifier("NewInputA", existingNames);
+  existingNames.add(inputA);
+  const inputB = uniqueIdentifier("NewInputB", existingNames);
+  const missingDeclarations = [output, inputA, inputB].filter((name) => !declared.has(name));
+  const nextText = insertVarDeclarations(text, missingDeclarations);
   const network = `NETWORK
-    OUT NewOutput := AND(NewInputA, NewInputB);
+    OUT ${output} := AND(${inputA}, ${inputB});
 END_NETWORK
 `;
-  if (text.includes(marker)) {
-    return text.replace(marker, `${network}${marker}`);
+  if (nextText.includes(marker)) {
+    return nextText.replace(marker, `${network}${marker}`);
   }
-  return `${text}\nFBD\n${network}END_FBD\n`;
+  return `${nextText}\nFBD\n${network}END_FBD\n`;
 }
 
 export function appendFbdLiteral(text: string, networkIndex?: number | null): string {
@@ -315,14 +356,15 @@ export function toggleSfcInitialStep(text: string, stepName: string): string {
 }
 
 export function appendSfcStep(text: string, stepName = "NewStep"): string {
+  const uniqueStepName = uniqueIdentifier(stepName, parseSfcStepNames(text));
   const action = `ACTION ${stepName}:
     (* TODO *)
 END_ACTION;
 `;
   if (text.includes("END_PROGRAM")) {
-    return text.replace("END_PROGRAM", `STEP ${stepName};\n${action}\nEND_PROGRAM`);
+    return text.replace("END_PROGRAM", `STEP ${uniqueStepName};\n${action.replaceAll(stepName, uniqueStepName)}\nEND_PROGRAM`);
   }
-  return `${text}\nSTEP ${stepName};\n${action}\n`;
+  return `${text}\nSTEP ${uniqueStepName};\n${action.replaceAll(stepName, uniqueStepName)}\n`;
 }
 
 function parseSfcStepNames(text: string): string[] {
@@ -476,6 +518,9 @@ export function applyGraphEdit(
     return appendLdRung(file.text);
   }
   if (action === "add-network" && (file.languageId === "fbd" || file.languageId === "xml")) {
+    if (file.languageId === "xml") {
+      return file.text;
+    }
     return appendFbdNetwork(file.text);
   }
   if (action === "add-step" && file.languageId === "sfc") {
@@ -503,6 +548,9 @@ export function applyGraphEdit(
     return appendLdBranch(file.text);
   }
   if (action === "add-fbd-literal" && (file.languageId === "fbd" || file.languageId === "xml")) {
+    if (file.languageId === "xml") {
+      return file.text;
+    }
     return appendFbdLiteral(file.text, networkIndex);
   }
   if (action === "connect" && (file.languageId === "fbd" || file.languageId === "xml") && payload) {

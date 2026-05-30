@@ -1,4 +1,4 @@
-import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { Hand, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useRef, useState, type ReactNode, type WheelEvent } from "react";
 
 type GraphCanvasProps = {
@@ -37,6 +37,9 @@ export function GraphCanvas({ children }: GraphCanvasProps) {
   }, []);
 
   const onWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey && !event.metaKey) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     const delta = event.deltaY > 0 ? -WHEEL_STEP : WHEEL_STEP;
@@ -50,6 +53,11 @@ export function GraphCanvas({ children }: GraphCanvasProps) {
   return (
     <div className="graph-canvas-shell">
       <div className="graph-canvas-controls" role="toolbar" aria-label="Canvas zoom">
+        <span className="graph-canvas-hint">
+          <Hand size={12} aria-hidden="true" />
+          Scroll canvas
+        </span>
+        <span className="graph-canvas-controls-divider" aria-hidden="true" />
         <button type="button" className="graph-canvas-icon-btn" aria-label="Zoom in" disabled={atMax} onClick={zoomIn}>
           <ZoomIn size={14} aria-hidden="true" />
         </button>
@@ -73,6 +81,7 @@ export function GraphCanvas({ children }: GraphCanvasProps) {
       </div>
       <div
         className="graph-canvas-viewport"
+        aria-label="Scrollable graph canvas"
         onWheel={onWheel}
         onPointerDown={(event) => {
           const target = event.target as HTMLElement;
