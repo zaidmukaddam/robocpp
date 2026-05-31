@@ -107,6 +107,32 @@ fn rejects_huge_malformed_array_repetition_without_expansion() {
 }
 
 #[test]
+fn rejects_nested_array_repetition_before_expression_tree_explodes() {
+    let source = r#"
+            PROGRAM Demo
+            VAR
+                Values : ARRAY [1..10] OF INT := [4([4([4(1)])])];
+            END_VAR
+            END_PROGRAM
+        "#;
+    let output = parse_project_with_options(
+        "nested_array_repeat_limit.st",
+        source,
+        &ParseOptions {
+            implementation: ImplementationParameters {
+                max_array_elements: 16,
+                ..ImplementationParameters::default()
+            },
+        },
+    );
+
+    assert!(output
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.message.contains("array literal expands to")));
+}
+
+#[test]
 fn parses_duration_literal() {
     assert_eq!(parse_hash_literal("T#1s"), Literal::DurationMs(1000));
     assert_eq!(

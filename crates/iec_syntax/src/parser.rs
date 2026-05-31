@@ -1996,12 +1996,13 @@ impl<'a> Parser<'a> {
     fn parse_array_literal(&mut self) -> Expr {
         self.expect_symbol(Symbol::LBracket, "expected '[' in array literal");
         let mut elements = Vec::new();
+        let mut element_cost = 0usize;
         if self.check_symbol(Symbol::RBracket) {
             self.advance();
             return Expr::ArrayLiteral(elements);
         }
         loop {
-            self.parse_array_literal_element(&mut elements);
+            self.parse_array_literal_element(&mut elements, &mut element_cost);
             if !self.match_symbol(Symbol::Comma) {
                 break;
             }
@@ -2010,22 +2011,27 @@ impl<'a> Parser<'a> {
         Expr::ArrayLiteral(elements)
     }
 
-    fn parse_array_literal_element(&mut self, elements: &mut Vec<Expr>) {
+    fn parse_array_literal_element(&mut self, elements: &mut Vec<Expr>, element_cost: &mut usize) {
         if matches!(self.current().kind, TokenKind::Number(_)) && self.peek_symbol(Symbol::LParen) {
             let count_token = self.current().clone();
             let count = self.expect_unsigned_integer("expected array repetition count");
             self.expect_symbol(Symbol::LParen, "expected '(' after array repetition count");
             let value = self.parse_expression();
             self.expect_symbol(Symbol::RParen, "expected ')' after array repetition value");
-            self.extend_array_literal(elements, count, value, &count_token);
+            self.extend_array_literal(elements, element_cost, count, value, &count_token);
             return;
         }
 
         let expr = self.parse_expression();
-        self.push_array_literal_element(elements, expr);
+        self.push_array_literal_element(elements, element_cost, expr);
     }
 
-    fn push_array_literal_element(&mut self, elements: &mut Vec<Expr>, expr: Expr) {
+    fn push_array_literal_element(
+        &mut self,
+        elements: &mut Vec<Expr>,
+        element_cost: &mut usize,
+        expr: Expr,
+    ) {
         let max = self.implementation.max_array_elements;
         if elements.len() >= max {
             let token = self.previous().clone();
@@ -2035,17 +2041,38 @@ impl<'a> Parser<'a> {
             );
             return;
         }
+        let value_cost = expr_tree_cost(&expr, max);
+        let Some(new_cost) = element_cost.checked_add(value_cost) else {
+            let token = self.previous().clone();
+            self.limit_error_at(
+                &token,
+                format!("array literal expands beyond maximum {max} expression nodes"),
+            );
+            return;
+        };
+        if new_cost > max {
+            let token = self.previous().clone();
+            self.limit_error_at(
+                &token,
+                format!(
+                    "array literal expands to {new_cost} expression nodes, exceeding maximum {max}"
+                ),
+            );
+            return;
+        }
         if elements.try_reserve(1).is_err() {
             let token = self.previous().clone();
             self.limit_error_at(&token, "array literal element storage exhausted");
             return;
         }
         elements.push(expr);
+        *element_cost = new_cost;
     }
 
     fn extend_array_literal(
         &mut self,
         elements: &mut Vec<Expr>,
+        element_cost: &mut usize,
         count: usize,
         value: Expr,
         count_token: &Token,
@@ -2072,11 +2099,36 @@ impl<'a> Parser<'a> {
             );
             return;
         }
+        let value_cost = expr_tree_cost(&value, max);
+        let Some(additional_cost) = value_cost.checked_mul(count) else {
+            self.limit_error_at(
+                count_token,
+                format!("array literal expands beyond maximum {max} expression nodes"),
+            );
+            return;
+        };
+        let Some(new_cost) = element_cost.checked_add(additional_cost) else {
+            self.limit_error_at(
+                count_token,
+                format!("array literal expands beyond maximum {max} expression nodes"),
+            );
+            return;
+        };
+        if new_cost > max {
+            self.limit_error_at(
+                count_token,
+                format!(
+                    "array literal expands to {new_cost} expression nodes, exceeding maximum {max}"
+                ),
+            );
+            return;
+        }
         if elements.try_reserve(count).is_err() {
             self.limit_error_at(count_token, "array literal element storage exhausted");
             return;
         }
         elements.extend((0..count).map(|_| value.clone()));
+        *element_cost = new_cost;
     }
 
     fn parse_struct_literal(&mut self) -> Expr {
@@ -2508,6 +2560,62 @@ impl<'a> Parser<'a> {
         }
         literal
     }
+}
+
+fn expr_tree_cost(expr: &Expr, max: usize) -> usize {
+    let mut total = 1usize;
+    match expr {
+        Expr::Literal(_) => {}
+        Expr::Variable(variable) => {
+            add_capped_cost(&mut total, variable_ref_tree_cost(variable, max), max)
+        }
+        Expr::Unary { expr, .. } => add_capped_cost(&mut total, expr_tree_cost(expr, max), max),
+        Expr::Binary { left, right, .. } => {
+            add_capped_cost(&mut total, expr_tree_cost(left, max), max);
+            add_capped_cost(&mut total, expr_tree_cost(right, max), max);
+        }
+        Expr::Call { args, .. } => {
+            for arg in args {
+                add_capped_cost(&mut total, param_assignment_tree_cost(arg, max), max);
+            }
+        }
+        Expr::ArrayLiteral(elements) => {
+            for element in elements {
+                add_capped_cost(&mut total, expr_tree_cost(element, max), max);
+            }
+        }
+        Expr::StructLiteral(fields) => {
+            for field in fields {
+                add_capped_cost(&mut total, param_assignment_tree_cost(field, max), max);
+            }
+        }
+    }
+    total
+}
+
+fn param_assignment_tree_cost(arg: &ParamAssignment, max: usize) -> usize {
+    let mut total = 0usize;
+    if let Some(expr) = &arg.expr {
+        add_capped_cost(&mut total, expr_tree_cost(expr, max), max);
+    }
+    if let Some(variable) = &arg.variable {
+        add_capped_cost(&mut total, variable_ref_tree_cost(variable, max), max);
+    }
+    total
+}
+
+fn variable_ref_tree_cost(variable: &VariableRef, max: usize) -> usize {
+    let mut total = 0usize;
+    for indices in &variable.indices {
+        for index in indices {
+            add_capped_cost(&mut total, expr_tree_cost(index, max), max);
+        }
+    }
+    total
+}
+
+fn add_capped_cost(total: &mut usize, add: usize, max: usize) {
+    *total = total.saturating_add(add).min(max.saturating_add(1));
 }
 
 #[derive(Debug, Clone, Copy)]
