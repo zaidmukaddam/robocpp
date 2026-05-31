@@ -16,7 +16,7 @@
           </ST>
         </body>
         <addData>
-          <data name="https://example.invalid/vendor/readiness" handleUnknown="preserve">
+          <data name="urn:robotco:vendor/readiness" handleUnknown="preserve">
             <vendorElement key="preserve-this-metadata" />
           </data>
         </addData>
@@ -24,7 +24,7 @@
     </pous>
   </types>
   <addData>
-    <data name="https://example.invalid/vendor/project" handleUnknown="preserve">
+    <data name="urn:robotco:vendor/project" handleUnknown="preserve">
       <vendorElement projectKey="project-level-metadata" />
     </data>
   </addData>

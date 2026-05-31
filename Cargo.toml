@@ -21,7 +21,7 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://example.invalid/robocpp"
+repository = "https://github.com/zaidmukaddam/robocpp"
 rust-version = "1.76"
 
 [workspace.lints.rust]

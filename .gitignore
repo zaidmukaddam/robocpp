@@ -10,3 +10,4 @@ ourdev_569653*.pdf
 .claude/
 /fuzz/target/
 /fuzz/artifacts/
+skills-lock.json
