@@ -673,6 +673,26 @@ fn parses_textual_sfc_body() {
 }
 
 #[test]
+fn recovers_from_malformed_sfc_action_association_without_unbounded_growth() {
+    let source = "PROGRAM Sequence\nSTEP Start:\n(1\nEND_PROGRAM\n";
+    let output = parse_project("sfc_action_recovery_fuzz_regression.st", source);
+
+    assert!(output.diagnostics.iter().any(|diagnostic| diagnostic
+        .message
+        .contains("expected SFC action association name")));
+    assert!(
+        output.diagnostics.len() < 8,
+        "unexpected diagnostic growth: {:?}",
+        output.diagnostics
+    );
+
+    let pou = output.project.first_program().unwrap();
+    let sfc = pou.body.sfc.as_ref().unwrap();
+    assert_eq!(sfc.steps.len(), 1);
+    assert!(sfc.steps[0].actions.is_empty());
+}
+
+#[test]
 fn parses_textual_sfc_il_transition_bodies() {
     let source = r#"
             PROGRAM Sequence

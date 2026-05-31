@@ -441,9 +441,14 @@ impl<'a> Parser<'a> {
     fn parse_sfc_action_associations(&mut self) -> Vec<SfcActionAssociation> {
         let mut actions = Vec::new();
         while !self.is_eof() && !self.check_keyword("END_STEP") {
-            let name = self
-                .expect_identifier("expected SFC action association name")
-                .unwrap_or_else(|| Identifier::new("<error>"));
+            let start_pos = self.pos;
+            let Some(name) = self.expect_identifier("expected SFC action association name") else {
+                self.synchronize_to_sfc_action_association_boundary();
+                if self.pos == start_pos && !self.is_eof() {
+                    self.advance();
+                }
+                continue;
+            };
             let (qualifier, duration) = self.parse_sfc_action_qualifier();
             self.expect_symbol(
                 Symbol::Semicolon,
@@ -454,8 +459,21 @@ impl<'a> Parser<'a> {
                 qualifier: Some(qualifier),
                 duration,
             });
+            if self.pos == start_pos && !self.is_eof() {
+                self.advance();
+            }
         }
         actions
+    }
+
+    fn synchronize_to_sfc_action_association_boundary(&mut self) {
+        while !self.is_eof()
+            && !self.check_keyword("END_STEP")
+            && !self.check_symbol(Symbol::Semicolon)
+        {
+            self.advance();
+        }
+        self.match_symbol(Symbol::Semicolon);
     }
 
     fn parse_sfc_transition(&mut self, prefixed_name: Option<Identifier>) -> SfcTransition {
