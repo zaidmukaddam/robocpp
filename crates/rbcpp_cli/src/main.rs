@@ -20,6 +20,8 @@ use iec_runtime::{
 use iec_semantics::{check_project, CheckOptions};
 use iec_syntax::parse_project;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> ExitCode {
     match run_cli(env::args().collect()) {
         Ok(()) => ExitCode::SUCCESS,
@@ -46,6 +48,10 @@ fn run_cli(args: Vec<String>) -> Result<(), String> {
         "todos" => command_todos(&args[2..]),
         "parameters" => command_parameters(&args[2..]),
         "sfc-compliance" => command_sfc_compliance(&args[2..]),
+        "-V" | "--version" | "version" => {
+            println!("rbcpp {VERSION}");
+            Ok(())
+        }
         "-h" | "--help" | "help" => {
             print_usage();
             Ok(())
@@ -794,6 +800,7 @@ fn print_usage() {
            rbcpp compliance [--json] [--profile 2003-strict]\n\
            rbcpp todos [--json] [--profile 2003-strict]\n\
            rbcpp parameters [--json] [--profile 2003-strict]\n\
-           rbcpp sfc-compliance [--json] [--profile 2003-strict]"
+           rbcpp sfc-compliance [--json] [--profile 2003-strict]\n\
+           rbcpp --version"
     );
 }

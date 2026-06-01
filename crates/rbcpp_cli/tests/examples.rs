@@ -80,6 +80,25 @@ fn shipped_examples_pass_cli_check() {
 }
 
 #[test]
+fn cli_reports_package_version() {
+    let output = Command::new(env!("CARGO_BIN_EXE_rbcpp"))
+        .arg("--version")
+        .output()
+        .expect("failed to run rbcpp --version");
+
+    assert!(
+        output.status.success(),
+        "rbcpp --version failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout).trim(),
+        format!("rbcpp {}", env!("CARGO_PKG_VERSION"))
+    );
+}
+
+#[test]
 fn plcopen_examples_import_with_cli() {
     for file in example_files()
         .into_iter()
